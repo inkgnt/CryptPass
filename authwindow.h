@@ -3,11 +3,24 @@
 
 #include <QDialog>
 
-class authwindow : public QDialog
+namespace Ui {
+class AuthWindow;
+}
+
+class AuthWindow : public QDialog
 {
     Q_OBJECT
+
 public:
-    authwindow();
+    explicit AuthWindow(QWidget *parent = nullptr);
+    ~AuthWindow();
+
+    static unsigned char key[32];
+private slots:
+    void on_pushButton_clicked();
+
+private:
+    Ui::AuthWindow *ui;
 };
 
 #endif // AUTHWINDOW_H

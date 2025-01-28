@@ -24,8 +24,12 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(CryptPass
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+
+
         authwindow.ui
-        authwindow.h authwindow.cpp
+        regwindow.h regwindow.cpp regwindow.ui
+        authwindow.h authwindow.cpp authwindow.ui
+        crypto.h crypto.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET CryptPass APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
