@@ -17,7 +17,8 @@ void KeyManager::setKey(const std::array<unsigned char, KEY_SIZE>& newKey)
 {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(initialized) {
+    if(initialized)
+    {
         std::fill(key.begin(), key.end(), 0);
     }
 
@@ -33,11 +34,13 @@ std::array<unsigned char, KeyManager::KEY_SIZE> KeyManager::getKey()
 {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(!initialized) {
+    if(!initialized)
+    {
         throw std::runtime_error("Key not initialized");
     }
 
-    if(!isSessionValid()) {
+    if(!isSessionValid())
+    {
         clearKey();
         throw std::runtime_error("Session expired");
     }
@@ -50,7 +53,8 @@ void KeyManager::clearKey()
 {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(initialized) {
+    if(initialized)
+    {
         std::fill(key.begin(), key.end(), 0);
         initialized = false;
         qInfo() << "Key cleared at" << QDateTime::currentDateTime().toString(Qt::ISODate);
