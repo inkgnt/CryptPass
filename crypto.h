@@ -1,9 +1,7 @@
-#ifndef CRYPTO_H
-#define CRYPTO_H
+#pragma once
 
-#include <QByteArray>
+#include <vector>
 
-QByteArray encryptAES256(const QByteArray& plaintext, const unsigned char* key, const unsigned char* iv);
-QByteArray decryptAES256(const QByteArray& ciphertext, const unsigned char* key, const unsigned char* iv);
+std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const unsigned char* key, const unsigned char* iv);
+std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphertext, const unsigned char* key, const unsigned char* iv);
 
-#endif // CRYPT_H

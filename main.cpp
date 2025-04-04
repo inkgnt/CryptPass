@@ -8,7 +8,8 @@
 
 const QString HASH_FILE_PATH = "pHash.dat";
 
-bool isHashFileExists() {
+bool isHashFileExists()
+{
     QFile file(HASH_FILE_PATH);
     return file.exists();
 }
@@ -20,19 +21,27 @@ int main(int argc, char *argv[])
     // The purpose of the following branching block is to check for the existence of the master password hash.
     // If it exists, the program proceeds directly to the authorization step.
     // If it does not exist, the user first completes the registration and then the authorization.
-    if (!isHashFileExists()) {
+    if (!isHashFileExists())
+    {
         RegWindow regDialog;
-        if (regDialog.exec() == QDialog::Accepted) {
+        if (regDialog.exec() == QDialog::Accepted)
+        {
             AuthWindow authDialog;
-            if (authDialog.exec() != QDialog::Accepted) {
+            if (authDialog.exec() != QDialog::Accepted)
+            {
                 return 0;
             }
-        } else {
+        }
+        else
+        {
             return 0;
         }
-    } else {
+    }
+    else
+    {
         AuthWindow authDialog;
-        if (authDialog.exec() != QDialog::Accepted) {
+        if (authDialog.exec() != QDialog::Accepted)
+        {
             return 0;
         }
     }

@@ -1,5 +1,4 @@
-#ifndef KEYMANAGER_H
-#define KEYMANAGER_H
+#pragma once
 
 #include <array>
 #include <mutex>
@@ -39,5 +38,3 @@ private:
     QDateTime lastActivity;
     bool initialized = false;
 };
-
-#endif // KEYMANAGER_H
