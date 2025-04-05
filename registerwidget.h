@@ -1,5 +1,4 @@
-#ifndef REGISTERWIDGET_H
-#define REGISTERWIDGET_H
+#pragma once
 
 #include <QWidget>
 
@@ -15,8 +14,13 @@ public:
     explicit RegisterWidget(QWidget *parent = nullptr);
     ~RegisterWidget();
 
+signals:
+    void registerSuccess();
+
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::RegisterWidget *ui;
 };
 
-#endif // REGISTERWIDGET_H

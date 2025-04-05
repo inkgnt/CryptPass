@@ -4,8 +4,9 @@
 
 #include <openssl/evp.h>
 #include <openssl/aes.h>
+#include <openssl/rand.h>
 
-std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const unsigned char* key, const unsigned char* iv)
+std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv)
 {
     std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(), &EVP_CIPHER_CTX_free); //added RAII
 
@@ -16,7 +17,7 @@ std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plain
     std::vector<unsigned char> ciphertext(plaintext.size() + AES_BLOCK_SIZE);
 
     int len = 0;
-    if (EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv) != 1) {
+    if (EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data()) != 1) {
         return {};
     }
 
@@ -36,7 +37,7 @@ std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plain
     return ciphertext;
 }
 
-std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphertext, const unsigned char* key, const unsigned char* iv)
+std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv)
 {
     std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(), &EVP_CIPHER_CTX_free); //added RAII
 
@@ -47,7 +48,7 @@ std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphe
     std::vector<unsigned char> plaintext(ciphertext.size());
 
     int len = 0;
-    if (EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv) != 1) {
+    if (EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data()) != 1) {
         return {};
     }
 
@@ -65,4 +66,71 @@ std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphe
     plaintext.resize(plaintext_len);
 
     return plaintext;
+}
+
+
+bool loadHashAndSaltFromFile(std::vector<unsigned char> &storedSalt, std::vector<unsigned char> &storedHash)
+{
+    QFile file(HASH_FILE_PATH);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+
+    QDataStream in(&file);
+    QByteArray saltData, hashData;
+    in >> saltData >> hashData;
+
+    if (saltData.size() != SALT_LENGTH || hashData.size() != HASH_LENGTH) {
+        return false;
+    }
+
+    storedSalt.assign(saltData.begin(), saltData.end());
+    storedHash.assign(hashData.begin(), hashData.end());
+
+    return true;
+}
+
+void saveHashAndSaltToFile(const std::vector<unsigned char> &salt, const std::vector<unsigned char> &hash)
+{
+    QFile file(HASH_FILE_PATH);
+    if (!file.open(QIODevice::WriteOnly)) {
+        return;
+    }
+
+    QDataStream out(&file);
+    out << QByteArray(reinterpret_cast<const char*>(salt.data()), salt.size());
+    out << QByteArray(reinterpret_cast<const char*>(hash.data()), hash.size());
+}
+
+std::vector<unsigned char> generatePBKDF2Hash(const QString &password, const std::vector<unsigned char> &salt)
+{
+    std::vector<unsigned char> hash(HASH_LENGTH);
+
+    int success = PKCS5_PBKDF2_HMAC(
+        password.toUtf8().constData(),          // password
+        password.toUtf8().length(),             // password length
+        salt.data(),                            // salt
+        salt.size(),                            // salt length
+        ITERATIONS,                             // num iterations
+        EVP_sha256(),                           // hash func
+        HASH_LENGTH,                            // hash length
+        hash.data()                             // out buffer
+        );
+
+    if (success != 1) {
+        return {};
+    }
+
+    return hash;
+}
+
+std::vector<unsigned char> generateSalt()
+{
+    std::vector<unsigned char> salt(SALT_LENGTH);
+
+    if (RAND_bytes(salt.data(), SALT_LENGTH) != 1) {
+        throw std::runtime_error("Ошибка при генерации случайной соли с помощью OpenSSL");
+    }
+
+    return salt;
 }

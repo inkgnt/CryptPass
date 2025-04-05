@@ -3,6 +3,9 @@
 #include <QFile>
 
 #include <QMessageBox>
+#include "crypto.h"
+
+
 LoginWidget::LoginWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::LoginWidget)
@@ -23,11 +26,21 @@ void LoginWidget::on_pushButton_clicked()
         return;
     }
 
-    //далее я должен сравнить хэш введенного пароля с хэшем пароля из файла
-    //функция извлекает соль хэш, в качестве параметра получает введенный пароль
-    //генерит хэш с указанной солью из введенного пароля - сравнивает, если успех
-    //генерит новую соль, из введенного пароля и новой соли новый хэш и сохраняет с перезаписью файла
-    //получается можно создать одну функцию
-    //которая принимает на вход старую соль, старый хэш и введенный пароль
+    std::vector<unsigned char> storedSalt;
+    std::vector<unsigned char> storedHash;
+
+    loadHashAndSaltFromFile(storedSalt, storedHash);
+
+    if (memcmp(generatePBKDF2Hash(password, storedSalt).data(), storedHash.data(), storedHash.size()) == 0) {
+        auto newSalt = generateSalt();
+        auto newHash = generatePBKDF2Hash(password, newSalt);
+
+        saveHashAndSaltToFile(newSalt, newHash);
+
+        emit loginSuccess();
+    } else {
+        QMessageBox::warning(this, "Error", "Password is wrong!");
+        ui->lineEdit->text();
+    }
 }
 

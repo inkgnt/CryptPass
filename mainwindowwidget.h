@@ -1,5 +1,4 @@
-#ifndef MAINWINDOWWIDGET_H
-#define MAINWINDOWWIDGET_H
+#pragma once
 
 #include <QWidget>
 
@@ -18,5 +17,3 @@ public:
 private:
     Ui::MainWindowWidget *ui;
 };
-
-#endif // MAINWINDOWWIDGET_H

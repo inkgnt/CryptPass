@@ -30,4 +30,6 @@ private:
     RegisterWidget *registerWidget;
     LoginWidget *loginWidget;
     MainWindowWidget *mainWindowWidget;
+
+    void setWidget();
 };
