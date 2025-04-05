@@ -13,7 +13,7 @@ KeyManager::~KeyManager()
     clearKey();
 }
 
-void KeyManager::setKey(const std::array<unsigned char, KEY_SIZE>& newKey)
+void KeyManager::setKey(const std::vector<unsigned char>& newKey)
 {
     std::lock_guard<std::mutex> lock(mtx);
 
@@ -30,7 +30,7 @@ void KeyManager::setKey(const std::array<unsigned char, KEY_SIZE>& newKey)
     emit keyUpdated();
 }
 
-std::array<unsigned char, KeyManager::KEY_SIZE> KeyManager::getKey()
+std::vector<unsigned char> KeyManager::getKey()
 {
     std::lock_guard<std::mutex> lock(mtx);
 
@@ -53,14 +53,16 @@ void KeyManager::clearKey()
 {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(initialized)
+    if (initialized)
     {
         std::fill(key.begin(), key.end(), 0);
         initialized = false;
+        lastActivity = QDateTime();
         qInfo() << "Key cleared at" << QDateTime::currentDateTime().toString(Qt::ISODate);
         emit keyCleared();
     }
 }
+
 
 bool KeyManager::isSessionValid() const
 {

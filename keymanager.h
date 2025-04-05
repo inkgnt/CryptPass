@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <mutex>
 #include <QDateTime>
 #include <QObject>
@@ -12,14 +11,15 @@ public:
     static constexpr int KEY_SIZE = 32;
     static constexpr int SESSION_TIMEOUT_MS = 300000; // 5 min
 
-    //
+
     KeyManager(const KeyManager&) = delete;
     KeyManager& operator=(const KeyManager&) = delete;
 
     static KeyManager& instance();
 
-    void setKey(const std::array<unsigned char, KEY_SIZE>& newKey);
-    std::array<unsigned char, KEY_SIZE> getKey();
+    void setKey(const std::vector<unsigned char>& newKey);
+    std::vector<unsigned char> getKey();
+
     void clearKey();
 
     bool isSessionValid() const;
@@ -34,7 +34,7 @@ private:
     ~KeyManager();
 
     mutable std::mutex mtx;
-    std::array<unsigned char, KEY_SIZE> key{};
+    std::vector<unsigned char> key{};
     QDateTime lastActivity;
     bool initialized = false;
 };
