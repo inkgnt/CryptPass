@@ -124,6 +124,30 @@ std::vector<unsigned char> generatePBKDF2Hash(const QString &password, const std
     return hash;
 }
 
+std::vector<unsigned char> generateScryptKey(const QString &password, const std::vector<unsigned char> &salt)
+{
+    std::vector<unsigned char> key(HASH_LENGTH);
+
+    int success = EVP_PBE_scrypt(
+        password.toUtf8().constData(),       // password
+        password.toUtf8().length(),          // password length
+        salt.data(),                         // salt
+        salt.size(),                         // salt length
+        SCRYPT_N,                            //
+        SCRYPT_r,                            //
+        SCRYPT_p,                            //
+        SCRYPT_MAXMEM,                       //
+        key.data(),                          // out buffer
+        key.size()                           // key length
+        );
+
+    if (success != 1) {
+        return {};
+    }
+
+    return key;
+}
+
 std::vector<unsigned char> generateSalt()
 {
     std::vector<unsigned char> salt(SALT_LENGTH);

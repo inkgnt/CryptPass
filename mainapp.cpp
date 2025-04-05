@@ -1,6 +1,7 @@
 #include "mainapp.h"
 #include "ui_mainapp.h"
 #include "crypto.h"
+#include "keymanager.h"
 
 MainApp::MainApp(QWidget *parent)
     : QMainWindow(parent)

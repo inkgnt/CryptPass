@@ -4,7 +4,7 @@
 
 #include <QMessageBox>
 #include "crypto.h"
-
+#include "keymanager.h"
 
 LoginWidget::LoginWidget(QWidget *parent)
     : QWidget(parent)
@@ -32,10 +32,8 @@ void LoginWidget::on_pushButton_clicked()
     loadHashAndSaltFromFile(storedSalt, storedHash);
 
     if (memcmp(generatePBKDF2Hash(password, storedSalt).data(), storedHash.data(), storedHash.size()) == 0) {
-        auto newSalt = generateSalt();
-        auto newHash = generatePBKDF2Hash(password, newSalt);
 
-        saveHashAndSaltToFile(newSalt, newHash);
+        KeyManager::instance().setKey(generateScryptKey(password, storedSalt));
 
         emit loginSuccess();
     } else {
