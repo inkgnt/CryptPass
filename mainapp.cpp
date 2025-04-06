@@ -14,14 +14,13 @@ MainApp::MainApp(QWidget *parent)
 
     registerWidget = new RegisterWidget;
     loginWidget = new LoginWidget;
-    mainWindowWidget = new MainWindowWidget;
 
     connect(registerWidget, &RegisterWidget::registerSuccess, this, &MainApp::onRegistrationComplete);
     connect(loginWidget, &LoginWidget::loginSuccess, this, &MainApp::onLoginSuccess);
+    connect(&KeyManager::instance(), &KeyManager::keyCleared, this, &MainApp::onKeyCleared);
 
     stack->addWidget(registerWidget);
     stack->addWidget(loginWidget);
-    stack->addWidget(mainWindowWidget);
 
     setWidget();
 }
@@ -45,5 +44,11 @@ void MainApp::onRegistrationComplete() {
 }
 
 void MainApp::onLoginSuccess() {
+    mainWindowWidget = new MainWindowWidget;
+    stack->addWidget(mainWindowWidget);
     stack->setCurrentWidget(mainWindowWidget);
+}
+
+void MainApp::onKeyCleared() {
+    stack->setCurrentWidget(loginWidget);
 }

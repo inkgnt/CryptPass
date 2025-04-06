@@ -5,14 +5,14 @@
 #include <QString>
 #include <QFile>
 
-static const uint64_t SALT_LENGTH = 16;
-static const uint64_t HASH_LENGTH = 32;
-static const uint64_t ITERATIONS = 10000;
+static constexpr uint64_t SALT_LENGTH = 16;
+static constexpr uint64_t HASH_LENGTH = 32;
+static constexpr uint64_t ITERATIONS = 10000;
 
-static const uint64_t SCRYPT_N = 65536;  // Iteration count
-static const uint64_t SCRYPT_r = 32;      // Block size
-static const uint64_t SCRYPT_p = 2;       // Parallelization factor
-static const uint64_t SCRYPT_MAXMEM = 0;  // 0 = no restrictions
+static constexpr uint64_t SCRYPT_N = 65536;   // Iteration count
+static constexpr uint64_t SCRYPT_r = 32;      // Block size
+static constexpr uint64_t SCRYPT_p = 2;       // Parallelization factor
+static constexpr uint64_t SCRYPT_MAXMEM = 0;  // 0 = no restrictions
 
 const QString HASH_FILE_PATH = "pHash.dat";
 
@@ -29,4 +29,5 @@ void saveHashAndSaltToFile(const std::vector<unsigned char> &Salt, const std::ve
 
 std::vector<unsigned char> generatePBKDF2Hash(const QString &password, const std::vector<unsigned char> &salt);
 std::vector<unsigned char> generateScryptKey(const QString &password, const std::vector<unsigned char> &salt);
+
 std::vector<unsigned char> generateSalt();
