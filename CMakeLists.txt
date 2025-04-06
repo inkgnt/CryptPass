@@ -49,7 +49,16 @@ else()
     endif()
 endif()
 
-target_link_libraries(CryptPass PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Sql)
+
+#sqlcipher
+include_directories(${CMAKE_SOURCE_DIR}/external/include)
+link_directories(${CMAKE_SOURCE_DIR}/external/lib)
+
+target_link_libraries(CryptPass PRIVATE
+  Qt${QT_VERSION_MAJOR}::Widgets
+  Qt${QT_VERSION_MAJOR}::Sql
+  ${CMAKE_SOURCE_DIR}/external/lib/sqlite3.lib
+)
 
 if(OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})  #openssl
@@ -71,12 +80,30 @@ set_target_properties(CryptPass PROPERTIES
 )
 
 include(GNUInstallDirs)
+
 install(TARGETS CryptPass
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(CryptPass)
+if (WIN32)
+    get_target_property(QT_QMAKE_EXECUTABLE Qt${QT_VERSION_MAJOR}::windeployqt IMPORTED_LOCATION)
+    get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXECUTABLE}" DIRECTORY)
+    set(WINDEPLOYQT_EXECUTABLE "${QT_BIN_DIR}/windeployqt.exe")
+
+    add_custom_command(TARGET CryptPass POST_BUILD
+        COMMAND "${WINDEPLOYQT_EXECUTABLE}" --release "$<TARGET_FILE:CryptPass>"
+    )
+endif()
+
+#external dlls
+if(WIN32)
+    set(EXTERNAL_DLL_DIR "${CMAKE_SOURCE_DIR}/external/dll")
+
+    add_custom_command(TARGET CryptPass POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_DLL_DIR}/libcrypto-3-x64.dll" "$<TARGET_FILE_DIR:CryptPass>"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_DLL_DIR}/libssl-3-x64.dll" "$<TARGET_FILE_DIR:CryptPass>"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_DLL_DIR}/sqlite3.dll" "$<TARGET_FILE_DIR:CryptPass>"
+    )
 endif()
