@@ -1,43 +1,44 @@
-#ifndef KEYMANAGER_H
-#define KEYMANAGER_H
+#pragma once
 
-#include <array>
 #include <mutex>
 #include <QDateTime>
 #include <QObject>
+#include <QTimer>
 
 class KeyManager : public QObject
 {
     Q_OBJECT
 public:
-    static constexpr int KEY_SIZE = 32;
-    static constexpr int SESSION_TIMEOUT_MS = 300000; // 5 min
+    static constexpr uint64_t KEY_SIZE = 32;
+    static constexpr uint64_t SESSION_TIMEOUT_MS = 60000; // 60 sec
 
-    //
     KeyManager(const KeyManager&) = delete;
     KeyManager& operator=(const KeyManager&) = delete;
 
     static KeyManager& instance();
 
-    void setKey(const std::array<unsigned char, KEY_SIZE>& newKey);
-    std::array<unsigned char, KEY_SIZE> getKey();
+    void setKey(const std::vector<unsigned char>& newKey);
+    std::vector<unsigned char> getKey();
+
     void clearKey();
 
     bool isSessionValid() const;
     void updateLastActivity();
 
 signals:
-    void keyUpdated();
     void keyCleared();
 
 private:
-    KeyManager() = default;
+    explicit KeyManager(QObject* parent = nullptr);
     ~KeyManager();
 
+    void checkSessionValidity();
+    void clearKeyUnsafe();
+
     mutable std::mutex mtx;
-    std::array<unsigned char, KEY_SIZE> key{};
+    std::vector<unsigned char> key{};
     QDateTime lastActivity;
     bool initialized = false;
-};
 
-#endif // KEYMANAGER_H
+    QTimer* sessionCheckTimer = nullptr;
+};
