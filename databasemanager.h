@@ -3,6 +3,16 @@
 #include <QObject>
 #include <QSqlDatabase>
 #include <QString>
+#include <QList>
+#include <QByteArray>
+#include <vector>
+
+struct PasswordRecord {
+    int id;
+    QString url;
+    QByteArray login;
+    QByteArray password;
+};
 
 class DatabaseManager : public QObject
 {
@@ -10,11 +20,16 @@ class DatabaseManager : public QObject
 public:
     static DatabaseManager& instance();
 
-    bool openDatabase(const QString &dbPath);
+    bool databaseFileExists(const QString &dbPath) const;
+    bool createTables();
 
+    bool openDatabase(const QString &dbPath);
     void closeDatabase();
 
-    bool createTables();
+    bool addRecord(const QString &url, const QByteArray &login, const QByteArray &encryptedPassword);
+    bool deleteRecord(int id);
+
+    QList<PasswordRecord> getAllRecords() const;
 
     QSqlDatabase database() const;
 
