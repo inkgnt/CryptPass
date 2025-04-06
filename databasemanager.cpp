@@ -24,7 +24,9 @@ DatabaseManager::~DatabaseManager()
 
 bool DatabaseManager::openDatabase(const QString &dbPath)
 {
-    m_database = QSqlDatabase::addDatabase("QSQLITE");
+    if (QSqlDatabase::contains("passDB"))
+        QSqlDatabase::removeDatabase("passDB");
+    m_database = QSqlDatabase::addDatabase("QSQLITE", "passDB");
     m_database.setDatabaseName(dbPath);
 
     if (!m_database.open()) {
@@ -32,19 +34,8 @@ bool DatabaseManager::openDatabase(const QString &dbPath)
         return false;
     }
 
-    std::vector<unsigned char> key = KeyManager::instance().getKey();
-
-    if (KeyManager::instance().isSessionValid()) {
-        QSqlQuery pragmaQuery(m_database);
-
-        QByteArray keyBytes(reinterpret_cast<const char*>(key.data()), key.size());
-
-        QString pragmaStmt = QString("PRAGMA key = \"x'%1'\"").arg(QString(keyBytes.toHex()));
-        qWarning() << pragmaStmt;
-        if (!pragmaQuery.exec(pragmaStmt)) {
-            qWarning() << "Unable to set database key:" << pragmaQuery.lastError().text();
-            return false;
-        }
+    if (!setEncryptionKey()) {
+        return false;
     }
 
     return true;
@@ -63,6 +54,10 @@ QSqlDatabase DatabaseManager::database() const
 
 bool DatabaseManager::createTables()
 {
+    if (!setEncryptionKey()) {
+        return false;
+    }
+
     QSqlQuery query(m_database);
     QString createTableQuery = "CREATE TABLE IF NOT EXISTS passwords ("
                                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -76,6 +71,30 @@ bool DatabaseManager::createTables()
     }
     return true;
 }
+
+bool DatabaseManager::setEncryptionKey()
+{
+    std::vector<unsigned char> key = KeyManager::instance().getKey();
+
+    if (KeyManager::instance().isSessionValid()) {
+        QSqlQuery pragmaQuery(m_database);
+
+        QByteArray keyBytes(reinterpret_cast<const char*>(key.data()), key.size());
+
+        QString pragmaStmt = QString("PRAGMA key = \"x'%1'\"").arg(QString(keyBytes.toHex()));
+        qWarning() << "Setting PRAGMA key:" << pragmaStmt;
+        if (!pragmaQuery.exec(pragmaStmt)) {
+            qWarning() << "Unable to set database key:" << pragmaQuery.lastError().text();
+            return false;
+        }
+    } else {
+        qWarning() << "Session is not valid. Key is not set.";
+        return false;
+    }
+
+    return true;
+}
+
 
 bool DatabaseManager::addRecord(const QString &url, const QByteArray &login, const QByteArray &encryptedPassword)
 {
