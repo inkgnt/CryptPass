@@ -34,11 +34,11 @@ void LoginWidget::on_pushButton_clicked()
     if (memcmp(generatePBKDF2Hash(password, storedSalt).data(), storedHash.data(), storedHash.size()) == 0) {
 
         KeyManager::instance().setKey(generateScryptKey(password, storedSalt));
-
+        ui->lineEdit->clear();
         emit loginSuccess();
     } else {
         QMessageBox::warning(this, "Error", "Password is wrong!");
-        ui->lineEdit->text();
+        ui->lineEdit->clear();
     }
 }
 

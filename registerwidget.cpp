@@ -36,6 +36,9 @@ void RegisterWidget::on_pushButton_clicked()
 
     saveHashAndSaltToFile(salt, hash);
 
+    ui->lineEdit->clear();
+    ui->lineEdit_2->clear();
+
     emit registerSuccess();
 }
 
