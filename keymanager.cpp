@@ -1,5 +1,5 @@
 #include "keymanager.h"
-#include <algorithm>
+
 #include <QtDebug>
 
 KeyManager& KeyManager::instance()
@@ -8,36 +8,42 @@ KeyManager& KeyManager::instance()
     return instance;
 }
 
+KeyManager::KeyManager(QObject* parent)
+    : QObject(parent)
+{
+    sessionCheckTimer = new QTimer(this);
+    connect(sessionCheckTimer, &QTimer::timeout, this, &KeyManager::checkSessionValidity);
+    sessionCheckTimer->start(SESSION_TIMEOUT_MS);
+}
+
 KeyManager::~KeyManager()
 {
     clearKey();
 }
 
-void KeyManager::setKey(const std::array<unsigned char, KEY_SIZE>& newKey)
+void KeyManager::setKey(const std::vector<unsigned char>& newKey)
 {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(initialized) {
-        std::fill(key.begin(), key.end(), 0);
-    }
+    std::fill(key.begin(), key.end(), 0);
 
     std::copy(newKey.begin(), newKey.end(), key.begin());
-    initialized = true;
-    lastActivity = QDateTime::currentDateTime();
 
-    qInfo() << "Key updated at" << lastActivity.toString(Qt::ISODate);
-    emit keyUpdated();
+    initialized = true;
+    updateLastActivity();
 }
 
-std::array<unsigned char, KeyManager::KEY_SIZE> KeyManager::getKey()
+std::vector<unsigned char> KeyManager::getKey()
 {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(!initialized) {
+    if(!initialized)
+    {
         throw std::runtime_error("Key not initialized");
     }
 
-    if(!isSessionValid()) {
+    if(!isSessionValid())
+    {
         clearKey();
         throw std::runtime_error("Session expired");
     }
@@ -50,20 +56,39 @@ void KeyManager::clearKey()
 {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if(initialized) {
+    clearKeyUnsafe();
+}
+
+void KeyManager::clearKeyUnsafe()
+{
+    if (initialized) {
         std::fill(key.begin(), key.end(), 0);
         initialized = false;
-        qInfo() << "Key cleared at" << QDateTime::currentDateTime().toString(Qt::ISODate);
+
         emit keyCleared();
     }
 }
 
 bool KeyManager::isSessionValid() const
 {
-    return lastActivity.msecsTo(QDateTime::currentDateTime()) < SESSION_TIMEOUT_MS;
+    if (initialized)
+        return lastActivity.msecsTo(QDateTime::currentDateTime()) < SESSION_TIMEOUT_MS;
+
+    return false;
 }
 
 void KeyManager::updateLastActivity()
 {
     lastActivity = QDateTime::currentDateTime();
+}
+
+void KeyManager::checkSessionValidity()
+{
+    qWarning() << "check session .. ";
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (initialized && lastActivity.msecsTo(QDateTime::currentDateTime()) >= SESSION_TIMEOUT_MS) {
+        clearKeyUnsafe();
+        qWarning() << "key cleared";
+    }
 }
