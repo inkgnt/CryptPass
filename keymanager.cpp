@@ -84,11 +84,9 @@ void KeyManager::updateLastActivity()
 
 void KeyManager::checkSessionValidity()
 {
-    qWarning() << "check session .. ";
     std::lock_guard<std::mutex> lock(mtx);
 
-    if (initialized && lastActivity.msecsTo(QDateTime::currentDateTime()) >= SESSION_TIMEOUT_MS) {
+    if (initialized && lastActivity.msecsTo(QDateTime::currentDateTime()) >= SESSION_TIMEOUT_MS)
         clearKeyUnsafe();
-        qWarning() << "key cleared";
-    }
+
 }
