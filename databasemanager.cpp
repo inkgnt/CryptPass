@@ -24,7 +24,9 @@ DatabaseManager::~DatabaseManager()
 
 bool DatabaseManager::openDatabase(const QString &dbPath)
 {
-    m_database = QSqlDatabase::addDatabase("QSQLITE");
+    if (QSqlDatabase::contains("passDB"))
+        QSqlDatabase::removeDatabase("passDB");
+    m_database = QSqlDatabase::addDatabase("QSQLITE", "passDB");
     m_database.setDatabaseName(dbPath);
 
     if (!m_database.open()) {

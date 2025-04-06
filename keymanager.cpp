@@ -9,7 +9,7 @@ KeyManager& KeyManager::instance()
 }
 
 KeyManager::KeyManager(QObject* parent)
-    : QObject(parent)
+    : QObject(parent), key(KEY_SIZE)
 {
     sessionCheckTimer = new QTimer(this);
     connect(sessionCheckTimer, &QTimer::timeout, this, &KeyManager::checkSessionValidity);
@@ -28,7 +28,7 @@ void KeyManager::setKey(const std::vector<unsigned char>& newKey)
     std::fill(key.begin(), key.end(), 0);
 
     std::copy(newKey.begin(), newKey.end(), key.begin());
-
+    qWarning() << newKey.data();
     initialized = true;
     updateLastActivity();
 }
