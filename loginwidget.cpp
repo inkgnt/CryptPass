@@ -17,6 +17,9 @@ LoginWidget::~LoginWidget()
 {
     delete ui;
 }
+auto toHexString = [](const std::vector<unsigned char>& data) -> QString {
+    return QByteArray(reinterpret_cast<const char*>(data.data()), static_cast<int>(data.size())).toHex(' ');
+};
 
 void LoginWidget::on_pushButton_clicked()
 {
@@ -34,6 +37,13 @@ void LoginWidget::on_pushButton_clicked()
     if (memcmp(generatePBKDF2Hash(password, storedSalt).data(), storedHash.data(), storedHash.size()) == 0) {
 
         KeyManager::instance().setKey(generateScryptKey(password, storedSalt));
+
+        qWarning() << "PBKDF2 hash:" << toHexString(generatePBKDF2Hash(password, storedSalt));
+        qWarning() << "Stored salt:" << toHexString(storedSalt);
+        qWarning() << "Stored hash:" << toHexString(storedHash);
+        qWarning() << "Scrypt key:" << toHexString(generateScryptKey(password, storedSalt));
+
+
         ui->lineEdit->clear();
         emit loginSuccess();
     } else {

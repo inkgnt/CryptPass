@@ -10,7 +10,7 @@ class KeyManager : public QObject
     Q_OBJECT
 public:
     static constexpr uint64_t KEY_SIZE = 32;
-    static constexpr uint64_t SESSION_TIMEOUT_MS = 60000; // 60 sec
+    static constexpr uint64_t SESSION_TIMEOUT_MS = 300000; // 5 min, 10000 - 1 sec, 60000 - 1 min
 
     KeyManager(const KeyManager&) = delete;
     KeyManager& operator=(const KeyManager&) = delete;
@@ -36,7 +36,7 @@ private:
     void clearKeyUnsafe();
 
     mutable std::mutex mtx;
-    std::vector<unsigned char> key{};
+    std::vector<unsigned char> key;
     QDateTime lastActivity;
     bool initialized = false;
 
