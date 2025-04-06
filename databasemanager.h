@@ -21,6 +21,8 @@ public:
     static DatabaseManager& instance();
 
     bool databaseFileExists(const QString &dbPath) const;
+
+    bool setEncryptionKey();
     bool createTables();
 
     bool openDatabase(const QString &dbPath);
