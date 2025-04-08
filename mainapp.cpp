@@ -56,11 +56,15 @@ void MainApp::onLoginSuccess() {
         return;
     }
 
-    mainWindowWidget = new MainWindowWidget;
+    mainWindowWidget = new MainWindowWidget(this);
     stack->addWidget(mainWindowWidget);
     stack->setCurrentWidget(mainWindowWidget);
 }
 
 void MainApp::onKeyCleared() {
+    stack->removeWidget(mainWindowWidget);
+    mainWindowWidget->deleteLater();
+    mainWindowWidget = nullptr;
+
     stack->setCurrentWidget(loginWidget);
 }
