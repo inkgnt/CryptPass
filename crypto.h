@@ -12,7 +12,7 @@ static constexpr uint64_t ITERATIONS = 10000;
 static constexpr uint64_t SCRYPT_N = 32768;           // Iteration count
 static constexpr uint64_t SCRYPT_r = 32;              // Block size
 static constexpr uint64_t SCRYPT_p = 2;               // Parallelization factor
-static constexpr uint64_t SCRYPT_MAXMEM = 268435456;  // 0 = no restrictions, 1,048,576 - 1 mb
+static constexpr uint64_t SCRYPT_MAXMEM = 268435456;  // 0 = no restrictions, 1048576 - 1 mb
 
 const QString HASH_FILE_PATH = "pHash.dat";
 
