@@ -30,6 +30,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         loginwidget.h loginwidget.cpp loginwidget.ui
         mainwindowwidget.h mainwindowwidget.cpp mainwindowwidget.ui
         databasemanager.h databasemanager.cpp
+        dialog.h dialog.cpp dialog.ui
+        passwordform.h passwordform.cpp passwordform.ui
+        passwordcardwidget.h passwordcardwidget.cpp passwordcardwidget.ui
+
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET CryptPass APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
