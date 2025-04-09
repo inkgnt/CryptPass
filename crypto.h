@@ -21,8 +21,8 @@ inline bool isHashFileExists() {
     return file.exists();
 }
 
-std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const unsigned char* key, const unsigned char* iv);
-std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphertext, const unsigned char* key, const unsigned char* iv);
+std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv);
+std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv);
 
 bool loadHashAndSaltFromFile(std::vector<unsigned char> &storedSalt, std::vector<unsigned char> &storedHash);
 void saveHashAndSaltToFile(const std::vector<unsigned char> &Salt, const std::vector<unsigned char> &Hash);
@@ -31,3 +31,4 @@ std::vector<unsigned char> generatePBKDF2Hash(const QString &password, const std
 std::vector<unsigned char> generateScryptKey(const QString &password, const std::vector<unsigned char> &salt);
 
 std::vector<unsigned char> generateSalt();
+std::vector<unsigned char> generateIV();

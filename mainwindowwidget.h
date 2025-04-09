@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QSqlTableModel>
 
 namespace Ui {
 class MainWindowWidget;
@@ -21,4 +22,6 @@ private slots:
 
 private:
     Ui::MainWindowWidget *ui;
+
+    void loadDataToList();
 };

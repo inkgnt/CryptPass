@@ -173,3 +173,14 @@ std::vector<unsigned char> generateSalt()
 
     return salt;
 }
+
+std::vector<unsigned char> generateIV()
+{
+    std::vector<unsigned char> IV(AES_BLOCK_SIZE);
+    if (RAND_bytes(IV.data(), AES_BLOCK_SIZE) != 1) {
+        throw std::runtime_error("Ошибка при генерации случайной соли с помощью OpenSSL");
+    }
+
+    return IV;
+}
+
