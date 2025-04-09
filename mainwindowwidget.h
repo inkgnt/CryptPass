@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QSqlTableModel>
 
 namespace Ui {
 class MainWindowWidget;
@@ -19,6 +20,12 @@ private slots:
 
     void on_pushButton_2_clicked();
 
+    void onSyncRequested();
+
+    void on_lineEdit_textChanged(const QString &arg1);
+
 private:
     Ui::MainWindowWidget *ui;
+
+    void loadDataToList(const QString& filter);
 };
