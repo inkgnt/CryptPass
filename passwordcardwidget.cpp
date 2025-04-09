@@ -11,7 +11,7 @@ PasswordCardWidget::PasswordCardWidget(PasswordRecord& record, QWidget *parent)
     , record(record)
 {
     ui->setupUi(this);
-
+    ui->pushButton->setStyleSheet("QPushButton { color: palette(window-text); }");
     ui->urlLabel->setText("🌐: " + record.url);
     ui->loginLabel->setText("👤: " + QString(8, QChar(0x25CF)));
     ui->passwordLabel->setText("🔒: " + QString(8, QChar(0x25CF)));

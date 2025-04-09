@@ -13,6 +13,7 @@ MainWindowWidget::MainWindowWidget(QWidget *parent)
 {
     ui->setupUi(this);
 
+    ui->lineEdit->addAction(QIcon(":/icons/icons/search_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg"), QLineEdit::LeadingPosition);
     loadDataToList("");
 }
 
