@@ -80,7 +80,6 @@ void PasswordCardWidget::on_pushButton_2_clicked()
     QListWidget *listWidget = findListWidget(this);
     if (!listWidget)
     {
-        qWarning() << "QListWidget not found as parent!";
         return;
     }
 
@@ -99,11 +98,7 @@ void PasswordCardWidget::on_pushButton_2_clicked()
         listWidget->takeItem(row);
         delete foundItem;
 
-        if (DatabaseManager::instance().deleteRecord(record.id)) {
-            qDebug() << "Record deleted: ID =" << record.id;
-        } else {
-            qWarning() << "Failed to delete record with ID:" << record.id;
-        }
+        DatabaseManager::instance().deleteRecord(record.id);
     }
 
     emit syncRequested();

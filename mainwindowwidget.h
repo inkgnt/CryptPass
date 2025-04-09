@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QWidget>
-#include <QSqlTableModel>
 
 namespace Ui {
 class MainWindowWidget;
