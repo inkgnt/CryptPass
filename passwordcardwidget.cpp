@@ -41,19 +41,28 @@ bool PasswordCardWidget::eventFilter(QObject *obj, QEvent *event)
 
 void PasswordCardWidget::on_pushButton_clicked()
 {
-    std::vector<unsigned char> ivLogin; ivLogin.assign(record.login.begin(), record.login.begin() + 16);
-    std::vector<unsigned char> ivPass; ivPass.assign(record.password.begin(), record.password.begin() + 16);
-    std::vector<unsigned char> cipherLogin; cipherLogin.assign(record.login.begin() + 16, record.login.end());
-    std::vector<unsigned char> cipherPass; cipherPass.assign(record.password.begin() + 16, record.password.end());
 
-    auto plainLogin = decryptAES256(cipherLogin, KeyManager::instance().getKey(), ivLogin);
-    auto plainPass = decryptAES256(cipherPass, KeyManager::instance().getKey(), ivPass);
+    if (flag) {
+        std::vector<unsigned char> ivLogin; ivLogin.assign(record.login.begin(), record.login.begin() + 16);
+        std::vector<unsigned char> ivPass; ivPass.assign(record.password.begin(), record.password.begin() + 16);
+        std::vector<unsigned char> cipherLogin; cipherLogin.assign(record.login.begin() + 16, record.login.end());
+        std::vector<unsigned char> cipherPass; cipherPass.assign(record.password.begin() + 16, record.password.end());
 
-    QString loginString = QString::fromUtf8(reinterpret_cast<const char*>(plainLogin.data()), plainLogin.size());
-    QString passString = QString::fromUtf8(reinterpret_cast<const char*>(plainPass.data()), plainPass.size());
+        auto plainLogin = decryptAES256(cipherLogin, KeyManager::instance().getKey(), ivLogin);
+        auto plainPass = decryptAES256(cipherPass, KeyManager::instance().getKey(), ivPass);
 
-    ui->loginLabel->setText("👤: " + loginString);
-    ui->passwordLabel->setText("🔒: " + passString);
+        QString loginString = QString::fromUtf8(reinterpret_cast<const char*>(plainLogin.data()), plainLogin.size());
+        QString passString = QString::fromUtf8(reinterpret_cast<const char*>(plainPass.data()), plainPass.size());
+
+        ui->loginLabel->setText("👤: " + loginString);
+        ui->passwordLabel->setText("🔒: " + passString);
+        flag = false;
+    }
+    else {
+        ui->loginLabel->setText("👤: " + QString(8, QChar(0x25CF)));
+        ui->passwordLabel->setText("🔒: " + QString(8, QChar(0x25CF)));
+        flag = true;
+    }
 }
 
 QListWidget* findListWidget(QWidget* start) {

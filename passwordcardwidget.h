@@ -29,4 +29,6 @@ private:
 
     PasswordRecord record;
     bool eventFilter(QObject *obj, QEvent *event);
+
+    bool flag = true;
 };
