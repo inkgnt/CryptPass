@@ -90,6 +90,9 @@
        <height>25</height>
       </size>
      </property>
+     <property name="placeholderText">
+      <string>Password:</string>
+     </property>
     </widget>
    </item>
    <item row="2" column="2">
@@ -125,6 +128,9 @@
        <width>200</width>
        <height>25</height>
       </size>
+     </property>
+     <property name="placeholderText">
+      <string>Confirm password:</string>
      </property>
     </widget>
    </item>
