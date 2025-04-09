@@ -1,7 +1,5 @@
 #include "keymanager.h"
 
-#include <QtDebug>
-
 KeyManager& KeyManager::instance()
 {
     static KeyManager instance;
@@ -28,7 +26,7 @@ void KeyManager::setKey(const std::vector<unsigned char>& newKey)
     std::fill(key.begin(), key.end(), 0);
 
     std::copy(newKey.begin(), newKey.end(), key.begin());
-    qWarning() << newKey.data();
+
     initialized = true;
     updateLastActivity();
 }
@@ -39,13 +37,14 @@ std::vector<unsigned char> KeyManager::getKey()
 
     if(!initialized)
     {
-        throw std::runtime_error("Key not initialized");
+        clearKey();
+        return{};
     }
 
     if(!isSessionValid())
     {
         clearKey();
-        throw std::runtime_error("Session expired");
+        return {};
     }
 
     updateLastActivity();
