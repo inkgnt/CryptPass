@@ -81,3 +81,9 @@ void MainWindowWidget::on_lineEdit_textChanged(const QString &filter)
     loadDataToList(filter);
 }
 
+
+void MainWindowWidget::on_pushButton_4_clicked()
+{
+    emit lockRequested();
+}
+
