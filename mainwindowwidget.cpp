@@ -2,7 +2,6 @@
 #include "passwordcardwidget.h"
 #include "ui_mainwindowwidget.h"
 
-#include "keymanager.h"
 #include "dialog.h"
 #include "passwordform.h"
 
@@ -14,7 +13,7 @@ MainWindowWidget::MainWindowWidget(QWidget *parent)
 {
     ui->setupUi(this);
 
-    loadDataToList();
+    loadDataToList("");
 }
 
 MainWindowWidget::~MainWindowWidget()
@@ -28,7 +27,7 @@ void MainWindowWidget::on_pushButton_clicked()
     auto d = new Dialog(pw, this);
     d->exec();
 
-    loadDataToList();
+    loadDataToList("");
 }
 
 void MainWindowWidget::on_pushButton_2_clicked()
@@ -46,23 +45,38 @@ void MainWindowWidget::on_pushButton_2_clicked()
         qWarning() << "Failed to delete record with ID:" << id;
     }
 
-    loadDataToList();
+    loadDataToList("");
 }
 
-void MainWindowWidget::loadDataToList()
+void MainWindowWidget::loadDataToList(const QString &filter)
 {
     ui->listWidget->clear();
     QList<PasswordRecord> records = DatabaseManager::instance().getAllRecords();
 
-    for (PasswordRecord& record : records) {
+    for (PasswordRecord &record : records) {
+        if (!(filter.isEmpty() || record.url.contains(filter, Qt::CaseInsensitive)))
+            continue;
+
         auto *widget = new PasswordCardWidget(record, this);
+        connect(widget, &PasswordCardWidget::syncRequested, this, &MainWindowWidget::onSyncRequested);
+
         auto *item = new QListWidgetItem(ui->listWidget);
         item->setData(Qt::UserRole, record.id);
-
         item->setSizeHint(widget->sizeHint());
 
         ui->listWidget->addItem(item);
         ui->listWidget->setItemWidget(item, widget);
     }
+}
+
+
+
+void MainWindowWidget::onSyncRequested() {
+    loadDataToList("");
+}
+
+void MainWindowWidget::on_lineEdit_textChanged(const QString &filter)
+{
+    loadDataToList(filter);
 }
 

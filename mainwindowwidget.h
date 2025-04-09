@@ -20,8 +20,12 @@ private slots:
 
     void on_pushButton_2_clicked();
 
+    void onSyncRequested();
+
+    void on_lineEdit_textChanged(const QString &arg1);
+
 private:
     Ui::MainWindowWidget *ui;
 
-    void loadDataToList();
+    void loadDataToList(const QString& filter);
 };
