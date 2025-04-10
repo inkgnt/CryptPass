@@ -1,7 +1,7 @@
 #include "mainwindowwidget.h"
-#include "passwordcardwidget.h"
 #include "ui_mainwindowwidget.h"
 
+#include "passwordcardwidget.h"
 #include "dialog.h"
 #include "passwordform.h"
 
@@ -13,6 +13,7 @@ MainWindowWidget::MainWindowWidget(QWidget *parent)
 {
     ui->setupUi(this);
 
+    ui->lineEdit->addAction(QIcon(":/icons/icons/search_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg"), QLineEdit::LeadingPosition);
     loadDataToList("");
 }
 
@@ -41,8 +42,6 @@ void MainWindowWidget::on_pushButton_2_clicked()
         int row = ui->listWidget->row(selectedItem);
         QListWidgetItem *item = ui->listWidget->takeItem(row);
         delete item;
-    } else {
-        qWarning() << "Failed to delete record with ID:" << id;
     }
 
     loadDataToList("");
@@ -80,3 +79,8 @@ void MainWindowWidget::on_lineEdit_textChanged(const QString &filter)
     loadDataToList(filter);
 }
 
+
+void MainWindowWidget::on_pushButton_4_clicked()
+{
+    emit lockRequested();
+}

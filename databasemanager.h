@@ -5,7 +5,6 @@
 #include <QString>
 #include <QList>
 #include <QByteArray>
-#include <vector>
 
 struct PasswordRecord {
     int id;

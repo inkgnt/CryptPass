@@ -1,4 +1,3 @@
-#include <QFile>
 #include <QApplication>
 #include "mainapp.h"
 
