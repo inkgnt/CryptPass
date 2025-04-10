@@ -1,7 +1,7 @@
 #include "mainwindowwidget.h"
-#include "passwordcardwidget.h"
 #include "ui_mainwindowwidget.h"
 
+#include "passwordcardwidget.h"
 #include "dialog.h"
 #include "passwordform.h"
 
@@ -42,8 +42,6 @@ void MainWindowWidget::on_pushButton_2_clicked()
         int row = ui->listWidget->row(selectedItem);
         QListWidgetItem *item = ui->listWidget->takeItem(row);
         delete item;
-    } else {
-        qWarning() << "Failed to delete record with ID:" << id;
     }
 
     loadDataToList("");
@@ -86,4 +84,3 @@ void MainWindowWidget::on_pushButton_4_clicked()
 {
     emit lockRequested();
 }
-
