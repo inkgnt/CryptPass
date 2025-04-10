@@ -10,4 +10,15 @@
         <file>icons/visibility_off_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
         <file>icons/search_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
     </qresource>
+    <qresource prefix="/iconsDark">
+        <file>iconsDark/account_circle_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/add_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/delete_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/download_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/lock_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/search_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/upload_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/visibility_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+        <file>iconsDark/visibility_off_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</file>
+    </qresource>
 </RCC>
