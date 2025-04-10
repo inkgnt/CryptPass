@@ -23,6 +23,7 @@ private slots:
     void onRegistrationComplete();
     void onLoginSuccess();
     void onKeyCleared();
+    void onLockRequested();
 
 private:
     Ui::MainApp *ui;

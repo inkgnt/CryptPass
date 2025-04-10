@@ -38,12 +38,6 @@ void LoginWidget::on_pushButton_clicked()
 
         KeyManager::instance().setKey(generateScryptKey(password, storedSalt));
 
-        qWarning() << "PBKDF2 hash:" << toHexString(generatePBKDF2Hash(password, storedSalt));
-        qWarning() << "Stored salt:" << toHexString(storedSalt);
-        qWarning() << "Stored hash:" << toHexString(storedHash);
-        qWarning() << "Scrypt key:" << toHexString(generateScryptKey(password, storedSalt));
-
-
         ui->lineEdit->clear();
         emit loginSuccess();
     } else {

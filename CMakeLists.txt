@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
+set(OPENSSL_USE_STATIC_LIBS FALSE)
 find_package(OpenSSL REQUIRED)  # openssl
 
 set(PROJECT_SOURCES
@@ -33,25 +34,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         dialog.h dialog.cpp dialog.ui
         passwordform.h passwordform.cpp passwordform.ui
         passwordcardwidget.h passwordcardwidget.cpp passwordcardwidget.ui
+        resource.qrc
 
 
     )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET CryptPass APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-else()
-    if(ANDROID)
-        add_library(CryptPass SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(CryptPass
-            ${PROJECT_SOURCES}
-        )
-    endif()
 endif()
 
 
@@ -62,7 +48,7 @@ link_directories(${CMAKE_SOURCE_DIR}/external/lib)
 target_link_libraries(CryptPass PRIVATE
   Qt${QT_VERSION_MAJOR}::Widgets
   Qt${QT_VERSION_MAJOR}::Sql
-  ${CMAKE_SOURCE_DIR}/external/lib/sqlite3.lib
+  #${CMAKE_SOURCE_DIR}/external/lib/sqlite3.lib
 )
 
 if(OPENSSL_FOUND)
@@ -109,6 +95,6 @@ if(WIN32)
     add_custom_command(TARGET CryptPass POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_DLL_DIR}/libcrypto-3-x64.dll" "$<TARGET_FILE_DIR:CryptPass>"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_DLL_DIR}/libssl-3-x64.dll" "$<TARGET_FILE_DIR:CryptPass>"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_DLL_DIR}/sqlite3.dll" "$<TARGET_FILE_DIR:CryptPass>"
+        #COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EXTERNAL_DLL_DIR}/sqlite3.dll" "$<TARGET_FILE_DIR:CryptPass>"
     )
 endif()
