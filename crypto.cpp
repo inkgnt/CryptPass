@@ -5,8 +5,6 @@
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 #include <openssl/rand.h>
-#include <qdebug.h>
-#include <openssl/err.h>
 
 std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv)
 {
@@ -91,8 +89,6 @@ bool loadHashAndSaltFromFile(std::vector<unsigned char> &storedSalt, std::vector
     QByteArray saltBytes(reinterpret_cast<const char*>(storedSalt.data()), storedSalt.size());
     QByteArray hashBytes(reinterpret_cast<const char*>(storedHash.data()), storedHash.size());
 
-    qWarning() << "Stored salt:" << saltBytes.toHex();
-    qWarning() << "Stored hash:" << hashBytes.toHex();
     return true;
 }
 
@@ -134,10 +130,8 @@ std::vector<unsigned char> generateScryptKey(const QString &password, const std:
 {
     std::vector<unsigned char> key(HASH_LENGTH);
 
-    if (salt.empty()) {
-        qWarning() << "Salt is empty!";
-        return {}; // Возвращаем пустой вектор, если соль не инициализирована
-    }
+    if (salt.empty())
+        return {};
 
     int success = EVP_PBE_scrypt(
         password.toUtf8().constData(),       // password
@@ -152,11 +146,9 @@ std::vector<unsigned char> generateScryptKey(const QString &password, const std:
         key.size()                           // key length
         );
 
-    if (success != 1) {
-        qWarning() << "EVP_PBE_scrypt failed with error code:" << success;
-        ERR_print_errors_fp(stderr); // Печать ошибок OpenSSL
+    if (success != 1)
         return {};
-    }
+
 
     return key;
 }
@@ -168,8 +160,19 @@ std::vector<unsigned char> generateSalt()
     std::vector<unsigned char> salt(SALT_LENGTH);
 
     if (RAND_bytes(salt.data(), SALT_LENGTH) != 1) {
-        throw std::runtime_error("Ошибка при генерации случайной соли с помощью OpenSSL");
+        throw std::runtime_error("Error while generating IV with OpenSSL");
     }
 
     return salt;
 }
+
+std::vector<unsigned char> generateIV()
+{
+    std::vector<unsigned char> IV(AES_BLOCK_SIZE);
+    if (RAND_bytes(IV.data(), AES_BLOCK_SIZE) != 1) {
+        throw std::runtime_error("Error while generating IV with OpenSSL");
+    }
+
+    return IV;
+}
+

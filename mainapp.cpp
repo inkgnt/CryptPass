@@ -3,6 +3,7 @@
 #include "crypto.h"
 #include "keymanager.h"
 #include "databasemanager.h"
+
 MainApp::MainApp(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainApp)
@@ -56,11 +57,25 @@ void MainApp::onLoginSuccess() {
         return;
     }
 
-    mainWindowWidget = new MainWindowWidget;
+    mainWindowWidget = new MainWindowWidget(this);
+
+    connect(mainWindowWidget, &MainWindowWidget::lockRequested, this, &MainApp::onLockRequested);
+
     stack->addWidget(mainWindowWidget);
     stack->setCurrentWidget(mainWindowWidget);
 }
 
 void MainApp::onKeyCleared() {
+    DatabaseManager::instance().closeDatabase();
+
+    stack->removeWidget(mainWindowWidget);
+    mainWindowWidget->deleteLater();
+    mainWindowWidget = nullptr;
+
     stack->setCurrentWidget(loginWidget);
 }
+
+void MainApp::onLockRequested() {
+    KeyManager::instance().clearKey();
+}
+

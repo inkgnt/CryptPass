@@ -1,8 +1,7 @@
 #include "databasemanager.h"
 
 #include <QSqlQuery>
-#include <QSqlError>
-#include <QDebug>
+
 #include "keymanager.h"
 
 DatabaseManager& DatabaseManager::instance()
@@ -26,17 +25,16 @@ bool DatabaseManager::openDatabase(const QString &dbPath)
 {
     if (QSqlDatabase::contains("passDB"))
         QSqlDatabase::removeDatabase("passDB");
+
     m_database = QSqlDatabase::addDatabase("QSQLITE", "passDB");
     m_database.setDatabaseName(dbPath);
 
-    if (!m_database.open()) {
-        qWarning() << "Unable to open database:" << m_database.lastError().text();
+    if (!m_database.open())
         return false;
-    }
 
-    if (!setEncryptionKey()) {
+
+    if (!setEncryptionKey())
         return false;
-    }
 
     return true;
 }
@@ -66,7 +64,6 @@ bool DatabaseManager::createTables()
                                "password BLOB NOT NULL"
                                ")";
     if (!query.exec(createTableQuery)) {
-        qWarning() << "Unable to create table:" << query.lastError().text();
         return false;
     }
     return true;
@@ -82,15 +79,11 @@ bool DatabaseManager::setEncryptionKey()
         QByteArray keyBytes(reinterpret_cast<const char*>(key.data()), key.size());
 
         QString pragmaStmt = QString("PRAGMA key = \"x'%1'\"").arg(QString(keyBytes.toHex()));
-        qWarning() << "Setting PRAGMA key:" << pragmaStmt;
-        if (!pragmaQuery.exec(pragmaStmt)) {
-            qWarning() << "Unable to set database key:" << pragmaQuery.lastError().text();
+        if (!pragmaQuery.exec(pragmaStmt))
             return false;
-        }
-    } else {
-        qWarning() << "Session is not valid. Key is not set.";
+    } else
         return false;
-    }
+
 
     return true;
 }
@@ -104,10 +97,9 @@ bool DatabaseManager::addRecord(const QString &url, const QByteArray &login, con
     query.bindValue(":login", login);
     query.bindValue(":password", encryptedPassword);
 
-    if (!query.exec()) {
-        qWarning() << "Unable to add record:" << query.lastError().text();
+    if (!query.exec())
         return false;
-    }
+
     return true;
 }
 
@@ -117,10 +109,9 @@ bool DatabaseManager::deleteRecord(int id)
     query.prepare("DELETE FROM passwords WHERE id = :id");
     query.bindValue(":id", id);
 
-    if (!query.exec()) {
-        qWarning() << "Unable to delete record:" << query.lastError().text();
+    if (!query.exec())
         return false;
-    }
+
     return true;
 }
 
@@ -128,10 +119,9 @@ QList<PasswordRecord> DatabaseManager::getAllRecords() const
 {
     QList<PasswordRecord> records;
     QSqlQuery query(m_database);
-    if (!query.exec("SELECT id, url, login, password FROM passwords")) {
-        qWarning() << "Unable to retrieve records:" << query.lastError().text();
-        return records;
-    }
+    if (!query.exec("SELECT id, url, login, password FROM passwords"))
+        return {};
+
 
     while (query.next()) {
         PasswordRecord rec;
