@@ -66,6 +66,8 @@ void MainApp::onLoginSuccess() {
 }
 
 void MainApp::onKeyCleared() {
+    DatabaseManager::instance().closeDatabase();
+
     stack->removeWidget(mainWindowWidget);
     mainWindowWidget->deleteLater();
     mainWindowWidget = nullptr;

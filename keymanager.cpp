@@ -16,6 +16,8 @@ KeyManager::KeyManager(QObject* parent)
 
 KeyManager::~KeyManager()
 {
+    delete sessionCheckTimer;
+    sessionCheckTimer = nullptr;
     clearKey();
 }
 
