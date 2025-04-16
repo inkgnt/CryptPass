@@ -6,20 +6,19 @@ Dialog::Dialog(QWidget *childWidget, QWidget *parent)
     , ui(new Ui::Dialog)
 {
     ui->setupUi(this);
-    QVBoxLayout *layout = new QVBoxLayout(this);
-
+    layout = new QVBoxLayout(this);
 
     layout->addWidget(childWidget);
-    childWidget->setParent(this);
+    //childWidget->setParent(this);
     setLayout(layout);
 
-    connect(childWidget, &QWidget::destroyed, this, &QDialog::accept);
+    //connect(childWidget, &QWidget::destroyed, this, &QDialog::accept);
+    //connect(childWidget, &QWidget::destroyed, this, &QDialog::reject);
 }
 
 Dialog::~Dialog()
 {
     delete layout;
     layout = nullptr;
-
     delete ui;
 }
