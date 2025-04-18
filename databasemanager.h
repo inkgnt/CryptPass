@@ -21,7 +21,6 @@ public:
 
     bool databaseFileExists(const QString &dbPath) const;
 
-    bool setEncryptionKey();
     bool createTables();
 
     bool openDatabase(const QString &dbPath);
@@ -31,8 +30,6 @@ public:
     bool deleteRecord(int id);
 
     QList<PasswordRecord> getAllRecords() const;
-
-    QSqlDatabase database() const;
 
 private:
     explicit DatabaseManager(QObject *parent = nullptr);

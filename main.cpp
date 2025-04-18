@@ -1,5 +1,6 @@
 #include <QApplication>
 #include "mainapp.h"
+#include "databasemanager.h"
 
 int main(int argc, char *argv[])
 {
@@ -7,5 +8,9 @@ int main(int argc, char *argv[])
     MainApp w;
 
     w.show();
-    return a.exec();
+
+    int result = a.exec();
+    DatabaseManager::instance().closeDatabase();
+
+    return result;
 }
