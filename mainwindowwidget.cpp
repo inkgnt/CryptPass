@@ -19,6 +19,7 @@ MainWindowWidget::MainWindowWidget(QWidget *parent)
 
 MainWindowWidget::~MainWindowWidget()
 {
+    DatabaseManager::instance().closeDatabase();
     delete ui;
 }
 

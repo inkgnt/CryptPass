@@ -86,8 +86,6 @@ bool loadHashAndSaltFromFile(std::vector<unsigned char> &storedSalt, std::vector
 
     storedSalt.assign(saltData.begin(), saltData.end());
     storedHash.assign(hashData.begin(), hashData.end());
-    QByteArray saltBytes(reinterpret_cast<const char*>(storedSalt.data()), storedSalt.size());
-    QByteArray hashBytes(reinterpret_cast<const char*>(storedHash.data()), storedHash.size());
 
     return true;
 }

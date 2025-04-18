@@ -2,38 +2,24 @@
 
 #include <QSqlQuery>
 
-#include "keymanager.h"
-
 DatabaseManager& DatabaseManager::instance()
 {
     static DatabaseManager instance;
     return instance;
 }
 
-DatabaseManager::DatabaseManager(QObject *parent)
-    : QObject(parent)
-{
+DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent) {}
 
-}
-
-DatabaseManager::~DatabaseManager()
-{
-    closeDatabase();
-}
+DatabaseManager::~DatabaseManager() {}
 
 bool DatabaseManager::openDatabase(const QString &dbPath)
 {
-    if (QSqlDatabase::contains("passDB"))
-        QSqlDatabase::removeDatabase("passDB");
+    closeDatabase();
 
     m_database = QSqlDatabase::addDatabase("QSQLITE", "passDB");
     m_database.setDatabaseName(dbPath);
 
     if (!m_database.open())
-        return false;
-
-
-    if (!setEncryptionKey())
         return false;
 
     return true;
@@ -43,19 +29,16 @@ void DatabaseManager::closeDatabase()
 {
     if (m_database.isOpen())
         m_database.close();
-}
 
-QSqlDatabase DatabaseManager::database() const
-{
-    return m_database;
+    QString cname = m_database.connectionName();
+    m_database = QSqlDatabase();
+
+    if (QSqlDatabase::contains(cname))
+        QSqlDatabase::removeDatabase(cname);
 }
 
 bool DatabaseManager::createTables()
 {
-    if (!setEncryptionKey()) {
-        return false;
-    }
-
     QSqlQuery query(m_database);
     QString createTableQuery = "CREATE TABLE IF NOT EXISTS passwords ("
                                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -68,26 +51,6 @@ bool DatabaseManager::createTables()
     }
     return true;
 }
-
-bool DatabaseManager::setEncryptionKey()
-{
-    std::vector<unsigned char> key = KeyManager::instance().getKey();
-
-    if (KeyManager::instance().isSessionValid()) {
-        QSqlQuery pragmaQuery(m_database);
-
-        QByteArray keyBytes(reinterpret_cast<const char*>(key.data()), key.size());
-
-        QString pragmaStmt = QString("PRAGMA key = \"x'%1'\"").arg(QString(keyBytes.toHex()));
-        if (!pragmaQuery.exec(pragmaStmt))
-            return false;
-    } else
-        return false;
-
-
-    return true;
-}
-
 
 bool DatabaseManager::addRecord(const QString &url, const QByteArray &login, const QByteArray &encryptedPassword)
 {

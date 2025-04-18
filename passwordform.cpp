@@ -40,12 +40,12 @@ void PasswordForm::on_pushButton_clicked()
     if (DatabaseManager::instance().addRecord(url, logDb, passDb)) {
         QMessageBox::information(this, "Ok", "Record added successfully.");
         if (auto dlg = qobject_cast<QDialog*>(this->parentWidget())) {
-            dlg->accept(); // <-- завершает диалог правильно
+            dlg->accept();
         }
     } else {
         QMessageBox::critical(this, "Error", "Failed to add record to database.");
         if (auto dlg = qobject_cast<QDialog*>(this->parentWidget())) {
-            dlg->reject(); // <-- завершает диалог правильно
+            dlg->reject();
         }
     }
 }

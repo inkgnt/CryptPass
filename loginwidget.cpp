@@ -17,6 +17,7 @@ LoginWidget::~LoginWidget()
 {
     delete ui;
 }
+
 auto toHexString = [](const std::vector<unsigned char>& data) -> QString {
     return QByteArray(reinterpret_cast<const char*>(data.data()), static_cast<int>(data.size())).toHex(' ');
 };
