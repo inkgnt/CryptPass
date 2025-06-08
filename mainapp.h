@@ -19,6 +19,9 @@ public:
     explicit MainApp(QWidget *parent = nullptr);
     ~MainApp();
 
+signals:
+    void themeChanged();
+
 private slots:
     void onRegistrationComplete();
     void onLoginSuccess();
@@ -34,4 +37,6 @@ private:
     MainWindowWidget *mainWindowWidget;
 
     void setWidget();
+protected:
+    bool event(QEvent *event) override;
 };

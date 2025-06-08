@@ -19,10 +19,13 @@ public:
 signals:
     void syncRequested();
 
-private slots:
-    void on_pushButton_clicked();
+public slots:
+    void onThemeChanged();
 
-    void on_pushButton_2_clicked();
+private slots:
+    void onSHOWbtnClicked();
+
+    void onDELbtnClicked();
 
 private:
     Ui::PasswordCardWidget *ui;

@@ -21,7 +21,7 @@ KeyManager::~KeyManager()
     clearKey();
 }
 
-void KeyManager::setKey(const std::vector<unsigned char>& newKey)
+void KeyManager::setKey(const std::vector<uint8_t>& newKey)
 {
     std::lock_guard<std::mutex> lock(mtx);
 
@@ -33,7 +33,7 @@ void KeyManager::setKey(const std::vector<unsigned char>& newKey)
     updateLastActivity();
 }
 
-std::vector<unsigned char> KeyManager::getKey()
+std::vector<uint8_t> KeyManager::getKey()
 {
     std::lock_guard<std::mutex> lock(mtx);
 

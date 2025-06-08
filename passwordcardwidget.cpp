@@ -1,9 +1,11 @@
 #include "passwordcardwidget.h"
 #include "ui_passwordcardwidget.h"
-#include <QMouseEvent>
+
 #include "crypto.h"
 #include "keymanager.h"
+
 #include <QListWidget>
+#include <QMouseEvent>
 
 PasswordCardWidget::PasswordCardWidget(PasswordRecord& record, QWidget *parent)
     : QWidget(parent)
@@ -11,7 +13,7 @@ PasswordCardWidget::PasswordCardWidget(PasswordRecord& record, QWidget *parent)
     , record(record)
 {
     ui->setupUi(this);
-    ui->pushButton->setStyleSheet("QPushButton { color: palette(window-text); }");
+
     ui->urlLabel->setText("🌐: " + record.url);
     ui->loginLabel->setText("👤: " + QString(8, QChar(0x25CF)));
     ui->passwordLabel->setText("🔒: " + QString(8, QChar(0x25CF)));
@@ -19,6 +21,19 @@ PasswordCardWidget::PasswordCardWidget(PasswordRecord& record, QWidget *parent)
     ui->urlLabel->installEventFilter(this);
     ui->loginLabel->installEventFilter(this);
     ui->passwordLabel->installEventFilter(this);
+
+    connect(ui->SHOWbtn, &QPushButton::clicked, this, &PasswordCardWidget::onSHOWbtnClicked);
+    connect(ui->DELbtn, &QPushButton::clicked, this, &PasswordCardWidget::onDELbtnClicked);
+    if(this->palette().color(QPalette::Window).lightness() < 128)
+    {
+        ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_show_light"));
+        ui->DELbtn->setIcon(QIcon(":/icons/light/icon_delete_light"));
+    }
+    else
+    {
+        ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_show_dark"));
+        ui->DELbtn->setIcon(QIcon(":/icons/dark/icon_delete_dark"));
+    }
 }
 
 PasswordCardWidget::~PasswordCardWidget()
@@ -39,14 +54,26 @@ bool PasswordCardWidget::eventFilter(QObject *obj, QEvent *event)
     return QWidget::eventFilter(obj, event);
 }
 
-void PasswordCardWidget::on_pushButton_clicked()
+QListWidget* findListWidget(QWidget* start)
 {
+    QWidget *p = start;
+    while (p)
+    {
+        if (auto lw = qobject_cast<QListWidget*>(p))
+            return lw;
+        p = p->parentWidget();
+    }
+    return nullptr;
+}
 
-    if (flag) {
-        std::vector<unsigned char> ivLogin; ivLogin.assign(record.login.begin(), record.login.begin() + 16);
-        std::vector<unsigned char> ivPass; ivPass.assign(record.password.begin(), record.password.begin() + 16);
-        std::vector<unsigned char> cipherLogin; cipherLogin.assign(record.login.begin() + 16, record.login.end());
-        std::vector<unsigned char> cipherPass; cipherPass.assign(record.password.begin() + 16, record.password.end());
+void PasswordCardWidget::onSHOWbtnClicked()
+{
+    if (flag)
+    {
+        std::vector<uint8_t> ivLogin; ivLogin.assign(record.login.begin(), record.login.begin() + 16);
+        std::vector<uint8_t> ivPass; ivPass.assign(record.password.begin(), record.password.begin() + 16);
+        std::vector<uint8_t> cipherLogin; cipherLogin.assign(record.login.begin() + 16, record.login.end());
+        std::vector<uint8_t> cipherPass; cipherPass.assign(record.password.begin() + 16, record.password.end());
 
         auto plainLogin = decryptAES256(cipherLogin, KeyManager::instance().getKey(), ivLogin);
         auto plainPass = decryptAES256(cipherPass, KeyManager::instance().getKey(), ivPass);
@@ -57,43 +84,53 @@ void PasswordCardWidget::on_pushButton_clicked()
         ui->loginLabel->setText("👤: " + loginString);
         ui->passwordLabel->setText("🔒: " + passString);
         flag = false;
+
+        if(this->palette().color(QPalette::Window).lightness() < 128)
+        {
+            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_hide_light"));
+        }
+        else
+        {
+            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_hide_dark"));
+        }
     }
-    else {
+    else
+    {
         ui->loginLabel->setText("👤: " + QString(8, QChar(0x25CF)));
         ui->passwordLabel->setText("🔒: " + QString(8, QChar(0x25CF)));
         flag = true;
+
+        if(this->palette().color(QPalette::Window).lightness() < 128)
+        {
+            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_show_light"));
+        }
+        else
+        {
+            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_show_dark"));
+        }
     }
 }
 
-QListWidget* findListWidget(QWidget* start) {
-    QWidget *p = start;
-    while (p) {
-        if (auto lw = qobject_cast<QListWidget*>(p))
-            return lw;
-        p = p->parentWidget();
-    }
-    return nullptr;
-}
-
-void PasswordCardWidget::on_pushButton_2_clicked()
+void PasswordCardWidget::onDELbtnClicked()
 {
     QListWidget *listWidget = findListWidget(this);
     if (!listWidget)
-    {
         return;
-    }
 
     QListWidgetItem *foundItem = nullptr;
 
-    for (int i = 0; i < listWidget->count(); ++i) {
+    for (int i = 0; i < listWidget->count(); ++i)
+    {
         QListWidgetItem *item = listWidget->item(i);
-        if (listWidget->itemWidget(item) == this) {
+        if (listWidget->itemWidget(item) == this)
+        {
             foundItem = item;
             break;
         }
     }
 
-    if (foundItem) {
+    if (foundItem)
+    {
         int row = listWidget->row(foundItem);
         listWidget->takeItem(row);
         delete foundItem;
@@ -104,4 +141,24 @@ void PasswordCardWidget::on_pushButton_2_clicked()
     emit syncRequested();
 }
 
+void PasswordCardWidget::onThemeChanged()
+{
+    if(this->palette().color(QPalette::Window).lightness() < 128)
+    {
+        if(flag)
+            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_show_light"));
+        else
+            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_hide_light"));
 
+        ui->DELbtn->setIcon(QIcon(":/icons/light/icon_delete_light"));
+    }
+    else
+    {
+        if(flag)
+            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_show_dark"));
+        else
+            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_hide_dark"));
+
+        ui->DELbtn->setIcon(QIcon(":/icons/dark/icon_delete_dark"));
+    }
+}

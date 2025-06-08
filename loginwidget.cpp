@@ -6,11 +6,32 @@
 #include "crypto.h"
 #include "keymanager.h"
 
+inline bool isDarkTheme(QWidget* w) {
+    return w->palette().color(QPalette::Window).lightness() < 128;
+}
+
 LoginWidget::LoginWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::LoginWidget)
 {
     ui->setupUi(this);
+
+    QString show = isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark";
+
+    ui->PSWDlineEdit->setEchoMode(QLineEdit::Password);
+    toggleAction = new QAction(QIcon(show), "Show/Hide", ui->PSWDlineEdit);
+    ui->PSWDlineEdit->addAction(toggleAction, QLineEdit::TrailingPosition);
+
+    connect(toggleAction, &QAction::triggered, this, [this]() {
+        isPasswordVisible = !isPasswordVisible;
+
+        ui->PSWDlineEdit->setEchoMode(isPasswordVisible ? QLineEdit::Normal : QLineEdit::Password);
+        toggleAction->setIcon(QIcon(isPasswordVisible
+                                        ? isDarkTheme(this) ? ":/icons/light/icon_hide_light" : ":/icons/dark/icon_hide_dark"
+                                        : isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark"));
+    });
+
+    connect(ui->LOGINbtn, &QPushButton::clicked, this, &LoginWidget::onLOGINbtnClicked);
 }
 
 LoginWidget::~LoginWidget()
@@ -18,32 +39,37 @@ LoginWidget::~LoginWidget()
     delete ui;
 }
 
-auto toHexString = [](const std::vector<unsigned char>& data) -> QString {
-    return QByteArray(reinterpret_cast<const char*>(data.data()), static_cast<int>(data.size())).toHex(' ');
-};
-
-void LoginWidget::on_pushButton_clicked()
+void LoginWidget::onLOGINbtnClicked()
 {
-    QString password = ui->lineEdit->text();
-    if (password.isEmpty()) {
+    QString password = ui->PSWDlineEdit->text();
+    if (password.isEmpty())
+    {
         QMessageBox::warning(this, "Error", "Password cannot be empty!");
         return;
     }
 
-    std::vector<unsigned char> storedSalt;
-    std::vector<unsigned char> storedHash;
+    std::vector<uint8_t> storedSalt;
+    std::vector<uint8_t> storedHash;
 
     loadHashAndSaltFromFile(storedSalt, storedHash);
 
-    if (memcmp(generatePBKDF2Hash(password, storedSalt).data(), storedHash.data(), storedHash.size()) == 0) {
-
+    if (memcmp(generatePBKDF2Hash(password, storedSalt).data(), storedHash.data(), storedHash.size()) == 0)
+    {
         KeyManager::instance().setKey(generateScryptKey(password, storedSalt));
 
-        ui->lineEdit->clear();
+        ui->PSWDlineEdit->clear();
         emit loginSuccess();
-    } else {
+    }
+    else
+    {
         QMessageBox::warning(this, "Error", "Password is wrong!");
-        ui->lineEdit->clear();
+        ui->PSWDlineEdit->clear();
     }
 }
 
+void LoginWidget::onThemeChanged() {
+    QString show = isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark";
+    QString hide = isDarkTheme(this) ? ":/icons/light/icon_hide_light" : ":/icons/dark/icon_hide_dark";
+
+    toggleAction->setIcon(QIcon(isPasswordVisible ? hide : show));
+}
