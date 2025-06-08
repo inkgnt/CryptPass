@@ -18,7 +18,7 @@ signals:
     void registerSuccess();
 
 private slots:
-    void on_pushButton_clicked();
+    void onSUBMITbtnClicked();
 
 private:
     Ui::RegisterWidget *ui;

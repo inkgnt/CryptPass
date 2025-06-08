@@ -6,30 +6,27 @@
 #include <openssl/aes.h>
 #include <openssl/rand.h>
 
-std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv)
+uint8_t pidor;
+std::vector<uint8_t> encryptAES256(const std::vector<uint8_t>& plaintext, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv)
 {
     std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(), &EVP_CIPHER_CTX_free); //added RAII
 
-    if (!ctx) {
+    if (!ctx)
         return {};
-    }
 
-    std::vector<unsigned char> ciphertext(plaintext.size() + AES_BLOCK_SIZE);
+    std::vector<uint8_t> ciphertext(plaintext.size() + AES_BLOCK_SIZE);
 
     int len = 0;
-    if (EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data()) != 1) {
+    if (EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data()) != 1)
         return {};
-    }
 
-    if (EVP_EncryptUpdate(ctx.get(), ciphertext.data(), &len, plaintext.data(), plaintext.size()) != 1) {
+    if (EVP_EncryptUpdate(ctx.get(), ciphertext.data(), &len, plaintext.data(), plaintext.size()) != 1)
         return {};
-    }
 
     int ciphertext_len = len;
 
-    if (EVP_EncryptFinal_ex(ctx.get(), ciphertext.data() + len, &len) != 1) {
+    if (EVP_EncryptFinal_ex(ctx.get(), ciphertext.data() + len, &len) != 1)
         return {};
-    }
 
     ciphertext_len += len;
     ciphertext.resize(ciphertext_len);
@@ -37,30 +34,26 @@ std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plain
     return ciphertext;
 }
 
-std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv)
+std::vector<uint8_t> decryptAES256(const std::vector<uint8_t>& ciphertext, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv)
 {
     std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> ctx(EVP_CIPHER_CTX_new(), &EVP_CIPHER_CTX_free); //added RAII
 
-    if (!ctx) {
+    if (!ctx)
         return {};
-    }
 
-    std::vector<unsigned char> plaintext(ciphertext.size());
+    std::vector<uint8_t> plaintext(ciphertext.size());
 
     int len = 0;
-    if (EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data()) != 1) {
+    if (EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key.data(), iv.data()) != 1)
         return {};
-    }
 
-    if (EVP_DecryptUpdate(ctx.get(), plaintext.data(), &len, ciphertext.data(), ciphertext.size()) != 1) {
+    if (EVP_DecryptUpdate(ctx.get(), plaintext.data(), &len, ciphertext.data(), ciphertext.size()) != 1)
         return {};
-    }
 
     int plaintext_len = len;
 
-    if (EVP_DecryptFinal_ex(ctx.get(), plaintext.data() + len, &len) != 1) {
+    if (EVP_DecryptFinal_ex(ctx.get(), plaintext.data() + len, &len) != 1)
         return {};
-    }
 
     plaintext_len += len;
     plaintext.resize(plaintext_len);
@@ -68,21 +61,18 @@ std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphe
     return plaintext;
 }
 
-
-bool loadHashAndSaltFromFile(std::vector<unsigned char> &storedSalt, std::vector<unsigned char> &storedHash)
+bool loadHashAndSaltFromFile(std::vector<uint8_t> &storedSalt, std::vector<uint8_t> &storedHash)
 {
     QFile file(HASH_FILE_PATH);
-    if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadOnly))
         return false;
-    }
 
     QDataStream in(&file);
     QByteArray saltData, hashData;
     in >> saltData >> hashData;
 
-    if (saltData.size() != SALT_LENGTH || hashData.size() != HASH_LENGTH) {
+    if (saltData.size() != SALT_LENGTH || hashData.size() != HASH_LENGTH)
         return false;
-    }
 
     storedSalt.assign(saltData.begin(), saltData.end());
     storedHash.assign(hashData.begin(), hashData.end());
@@ -90,21 +80,20 @@ bool loadHashAndSaltFromFile(std::vector<unsigned char> &storedSalt, std::vector
     return true;
 }
 
-void saveHashAndSaltToFile(const std::vector<unsigned char> &salt, const std::vector<unsigned char> &hash)
+void saveHashAndSaltToFile(const std::vector<uint8_t> &salt, const std::vector<uint8_t> &hash)
 {
     QFile file(HASH_FILE_PATH);
-    if (!file.open(QIODevice::WriteOnly)) {
+    if (!file.open(QIODevice::WriteOnly))
         return;
-    }
 
     QDataStream out(&file);
     out << QByteArray(reinterpret_cast<const char*>(salt.data()), salt.size());
     out << QByteArray(reinterpret_cast<const char*>(hash.data()), hash.size());
 }
 
-std::vector<unsigned char> generatePBKDF2Hash(const QString &password, const std::vector<unsigned char> &salt)
+std::vector<uint8_t> generatePBKDF2Hash(const QString &password, const std::vector<uint8_t> &salt)
 {
-    std::vector<unsigned char> hash(HASH_LENGTH);
+    std::vector<uint8_t> hash(HASH_LENGTH);
 
     int success = PKCS5_PBKDF2_HMAC(
         password.toUtf8().constData(),          // password
@@ -117,16 +106,15 @@ std::vector<unsigned char> generatePBKDF2Hash(const QString &password, const std
         hash.data()                             // out buffer
         );
 
-    if (success != 1) {
+    if (success != 1)
         return {};
-    }
 
     return hash;
 }
 
-std::vector<unsigned char> generateScryptKey(const QString &password, const std::vector<unsigned char> &salt)
+std::vector<uint8_t> generateScryptKey(const QString &password, const std::vector<uint8_t> &salt)
 {
-    std::vector<unsigned char> key(HASH_LENGTH);
+    std::vector<uint8_t> key(HASH_LENGTH);
 
     if (salt.empty())
         return {};
@@ -151,11 +139,9 @@ std::vector<unsigned char> generateScryptKey(const QString &password, const std:
     return key;
 }
 
-
-
-std::vector<unsigned char> generateSalt()
+std::vector<uint8_t> generateSalt()
 {
-    std::vector<unsigned char> salt(SALT_LENGTH);
+    std::vector<uint8_t> salt(SALT_LENGTH);
 
     if (RAND_bytes(salt.data(), SALT_LENGTH) != 1) {
         throw std::runtime_error("Error while generating IV with OpenSSL");
@@ -164,9 +150,9 @@ std::vector<unsigned char> generateSalt()
     return salt;
 }
 
-std::vector<unsigned char> generateIV()
+std::vector<uint8_t> generateIV()
 {
-    std::vector<unsigned char> IV(AES_BLOCK_SIZE);
+    std::vector<uint8_t> IV(AES_BLOCK_SIZE);
     if (RAND_bytes(IV.data(), AES_BLOCK_SIZE) != 1) {
         throw std::runtime_error("Error while generating IV with OpenSSL");
     }
