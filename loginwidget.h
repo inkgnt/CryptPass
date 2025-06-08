@@ -27,5 +27,5 @@ private:
     Ui::LoginWidget *ui;
 
     bool isPasswordVisible = false;
-    QAction *toggleAction = nullptr;
+    QToolButton *toggleButton = nullptr;
 };

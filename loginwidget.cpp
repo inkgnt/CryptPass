@@ -5,7 +5,9 @@
 #include <QMessageBox>
 #include "crypto.h"
 #include "keymanager.h"
-
+#include <QToolButton>
+#include <QToolButton>
+#include <QHBoxLayout>
 inline bool isDarkTheme(QWidget* w) {
     return w->palette().color(QPalette::Window).lightness() < 128;
 }
@@ -16,19 +18,41 @@ LoginWidget::LoginWidget(QWidget *parent)
 {
     ui->setupUi(this);
 
-    QString show = isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark";
+    QString showIcon = isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark";
 
     ui->PSWDlineEdit->setEchoMode(QLineEdit::Password);
-    toggleAction = new QAction(QIcon(show), "Show/Hide", ui->PSWDlineEdit);
-    ui->PSWDlineEdit->addAction(toggleAction, QLineEdit::TrailingPosition);
 
-    connect(toggleAction, &QAction::triggered, this, [this]() {
+    toggleButton = new QToolButton(ui->PSWDlineEdit);
+    toggleButton->setCursor(Qt::ArrowCursor);
+    toggleButton->setIcon(QIcon(showIcon));
+    toggleButton->setFixedSize(25, 25);
+    toggleButton->setStyleSheet(R"(
+        QToolButton {
+            border: none;
+            background-color: transparent;
+        }
+        QToolButton:hover {
+            background-color: rgba(150, 150, 150, 50);
+            border-radius: 4px;
+        }
+    )");
+
+    QHBoxLayout *layout = new QHBoxLayout(ui->PSWDlineEdit);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addStretch();
+    layout->addWidget(toggleButton);
+    ui->PSWDlineEdit->setLayout(layout);
+
+    connect(toggleButton, &QToolButton::clicked, this, [this]() {
         isPasswordVisible = !isPasswordVisible;
 
         ui->PSWDlineEdit->setEchoMode(isPasswordVisible ? QLineEdit::Normal : QLineEdit::Password);
-        toggleAction->setIcon(QIcon(isPasswordVisible
-                                        ? isDarkTheme(this) ? ":/icons/light/icon_hide_light" : ":/icons/dark/icon_hide_dark"
-                                        : isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark"));
+
+        QString iconPath = isPasswordVisible
+                               ? (isDarkTheme(this) ? ":/icons/light/icon_hide_light" : ":/icons/dark/icon_hide_dark")
+                               : (isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark");
+
+        toggleButton->setIcon(QIcon(iconPath));
     });
 
     connect(ui->LOGINbtn, &QPushButton::clicked, this, &LoginWidget::onLOGINbtnClicked);
@@ -71,5 +95,5 @@ void LoginWidget::onThemeChanged() {
     QString show = isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark";
     QString hide = isDarkTheme(this) ? ":/icons/light/icon_hide_light" : ":/icons/dark/icon_hide_dark";
 
-    toggleAction->setIcon(QIcon(isPasswordVisible ? hide : show));
+    toggleButton->setIcon(QIcon(isPasswordVisible ? hide : show));
 }
