@@ -17,6 +17,7 @@ MainApp::MainApp(QWidget *parent)
     loginWidget = new LoginWidget(stack);
 
     connect(registerWidget, &RegisterWidget::registerSuccess, this, &MainApp::onRegistrationComplete);
+    connect(this, &MainApp::themeChanged, registerWidget, &RegisterWidget::onThemeChanged);
 
     connect(loginWidget, &LoginWidget::loginSuccess, this, &MainApp::onLoginSuccess);
     connect(this, &MainApp::themeChanged, loginWidget, &LoginWidget::onThemeChanged);

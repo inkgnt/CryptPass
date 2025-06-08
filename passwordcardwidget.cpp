@@ -7,6 +7,10 @@
 #include <QListWidget>
 #include <QMouseEvent>
 
+inline bool isDarkTheme(QWidget* w) {
+    return w->palette().color(QPalette::Window).lightness() < 128;
+}
+
 PasswordCardWidget::PasswordCardWidget(PasswordRecord& record, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::PasswordCardWidget)
@@ -24,16 +28,10 @@ PasswordCardWidget::PasswordCardWidget(PasswordRecord& record, QWidget *parent)
 
     connect(ui->SHOWbtn, &QPushButton::clicked, this, &PasswordCardWidget::onSHOWbtnClicked);
     connect(ui->DELbtn, &QPushButton::clicked, this, &PasswordCardWidget::onDELbtnClicked);
-    if(this->palette().color(QPalette::Window).lightness() < 128)
-    {
-        ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_show_light"));
-        ui->DELbtn->setIcon(QIcon(":/icons/light/icon_delete_light"));
-    }
-    else
-    {
-        ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_show_dark"));
-        ui->DELbtn->setIcon(QIcon(":/icons/dark/icon_delete_dark"));
-    }
+
+
+    ui->SHOWbtn->setIcon(QIcon(isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark"));
+    ui->DELbtn->setIcon(QIcon(isDarkTheme(this) ? ":/icons/light/icon_delete_light" : ":/icons/dark/icon_delete_dark"));
 }
 
 PasswordCardWidget::~PasswordCardWidget()
@@ -43,9 +41,10 @@ PasswordCardWidget::~PasswordCardWidget()
 
 bool PasswordCardWidget::eventFilter(QObject *obj, QEvent *event)
 {
-    if (event->type() == QEvent::MouseButtonPress) {
-
-        if (obj == ui->urlLabel || obj == ui->loginLabel || obj == ui->passwordLabel) {
+    if (event->type() == QEvent::MouseButtonPress)
+    {
+        if (obj == ui->urlLabel || obj == ui->loginLabel || obj == ui->passwordLabel)
+        {
             QWidget::mousePressEvent(static_cast<QMouseEvent *>(event));
             return false;
         }
@@ -85,14 +84,7 @@ void PasswordCardWidget::onSHOWbtnClicked()
         ui->passwordLabel->setText("🔒: " + passString);
         flag = false;
 
-        if(this->palette().color(QPalette::Window).lightness() < 128)
-        {
-            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_hide_light"));
-        }
-        else
-        {
-            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_hide_dark"));
-        }
+        ui->SHOWbtn->setIcon(QIcon(isDarkTheme(this) ? ":/icons/light/icon_hide_light" : ":/icons/dark/icon_hide_dark"));
     }
     else
     {
@@ -100,14 +92,7 @@ void PasswordCardWidget::onSHOWbtnClicked()
         ui->passwordLabel->setText("🔒: " + QString(8, QChar(0x25CF)));
         flag = true;
 
-        if(this->palette().color(QPalette::Window).lightness() < 128)
-        {
-            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_show_light"));
-        }
-        else
-        {
-            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_show_dark"));
-        }
+        ui->SHOWbtn->setIcon(QIcon(isDarkTheme(this) ? ":/icons/light/icon_show_light" : ":/icons/dark/icon_show_dark"));
     }
 }
 
@@ -145,19 +130,13 @@ void PasswordCardWidget::onThemeChanged()
 {
     if(this->palette().color(QPalette::Window).lightness() < 128)
     {
-        if(flag)
-            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_show_light"));
-        else
-            ui->SHOWbtn->setIcon(QIcon(":/icons/light/icon_hide_light"));
+        ui->SHOWbtn->setIcon(QIcon(flag ? ":/icons/light/icon_show_light" : ":/icons/light/icon_hide_light"));
 
         ui->DELbtn->setIcon(QIcon(":/icons/light/icon_delete_light"));
     }
     else
     {
-        if(flag)
-            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_show_dark"));
-        else
-            ui->SHOWbtn->setIcon(QIcon(":/icons/dark/icon_hide_dark"));
+        ui->SHOWbtn->setIcon(QIcon(flag ? ":/icons/dark/icon_show_dark" : ":/icons/dark/icon_hide_dark"));
 
         ui->DELbtn->setIcon(QIcon(":/icons/dark/icon_delete_dark"));
     }
