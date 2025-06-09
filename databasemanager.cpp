@@ -46,7 +46,9 @@ bool DatabaseManager::createTables()
                                "login BLOB NOT NULL, "
                                "password BLOB NOT NULL"
                                ")";
-    if (!query.exec(createTableQuery)) {
+
+    if (!query.exec(createTableQuery))
+    {
         return false;
     }
     return true;
@@ -86,7 +88,8 @@ QList<PasswordRecord> DatabaseManager::getAllRecords() const
         return {};
 
 
-    while (query.next()) {
+    while (query.next())
+    {
         PasswordRecord rec;
         rec.id = query.value(0).toInt();
         rec.url = query.value(1).toString();

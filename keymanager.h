@@ -17,8 +17,8 @@ public:
 
     static KeyManager& instance();
 
-    void setKey(const std::vector<unsigned char>& newKey);
-    std::vector<unsigned char> getKey();
+    void setKey(const std::vector<uint8_t>& newKey);
+    std::vector<uint8_t> getKey();
 
     void clearKey();
 
@@ -36,7 +36,7 @@ private:
     void clearKeyUnsafe();
 
     mutable std::mutex mtx;
-    std::vector<unsigned char> key;
+    std::vector<uint8_t> key;
     QDateTime lastActivity;
     bool initialized = false;
 
