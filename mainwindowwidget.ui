@@ -24,7 +24,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QLineEdit" name="lineEdit">
+    <widget class="QLineEdit" name="SEARCHline">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -51,7 +51,7 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="ADDPSWDbtn">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -72,10 +72,6 @@
      </property>
      <property name="text">
       <string/>
-     </property>
-     <property name="icon">
-      <iconset resource="resource.qrc">
-       <normaloff>:/icons/icons/add_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</normaloff>:/icons/icons/add_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -86,7 +82,7 @@
     </widget>
    </item>
    <item row="0" column="2">
-    <widget class="QPushButton" name="pushButton_2">
+    <widget class="QPushButton" name="DELPSWDbtn">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -108,10 +104,6 @@
      <property name="text">
       <string/>
      </property>
-     <property name="icon">
-      <iconset resource="resource.qrc">
-       <normaloff>:/icons/icons/delete_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</normaloff>:/icons/icons/delete_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</iconset>
-     </property>
      <property name="iconSize">
       <size>
        <width>25</width>
@@ -121,7 +113,7 @@
     </widget>
    </item>
    <item row="0" column="3">
-    <widget class="QPushButton" name="pushButton_4">
+    <widget class="QPushButton" name="LOCKbtn">
      <property name="minimumSize">
       <size>
        <width>30</width>
@@ -136,10 +128,6 @@
      </property>
      <property name="text">
       <string/>
-     </property>
-     <property name="icon">
-      <iconset resource="resource.qrc">
-       <normaloff>:/icons/icons/lock_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</normaloff>:/icons/icons/lock_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -150,7 +138,7 @@
     </widget>
    </item>
    <item row="0" column="4">
-    <widget class="QPushButton" name="pushButton_5">
+    <widget class="QPushButton" name="IMPORTbtn">
      <property name="minimumSize">
       <size>
        <width>30</width>
@@ -165,10 +153,6 @@
      </property>
      <property name="text">
       <string/>
-     </property>
-     <property name="icon">
-      <iconset resource="resource.qrc">
-       <normaloff>:/icons/icons/upload_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</normaloff>:/icons/icons/upload_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -179,7 +163,7 @@
     </widget>
    </item>
    <item row="0" column="5">
-    <widget class="QPushButton" name="pushButton_6">
+    <widget class="QPushButton" name="EXPORTbtn">
      <property name="minimumSize">
       <size>
        <width>30</width>
@@ -194,10 +178,6 @@
      </property>
      <property name="text">
       <string/>
-     </property>
-     <property name="icon">
-      <iconset resource="resource.qrc">
-       <normaloff>:/icons/icons/download_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</normaloff>:/icons/icons/download_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -221,7 +201,7 @@
     </spacer>
    </item>
    <item row="0" column="7">
-    <widget class="QPushButton" name="pushButton_3">
+    <widget class="QPushButton" name="SETTINGSbtn">
      <property name="minimumSize">
       <size>
        <width>30</width>
@@ -237,10 +217,6 @@
      <property name="text">
       <string/>
      </property>
-     <property name="icon">
-      <iconset resource="resource.qrc">
-       <normaloff>:/icons/icons/account_circle_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</normaloff>:/icons/icons/account_circle_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg</iconset>
-     </property>
      <property name="iconSize">
       <size>
        <width>25</width>
@@ -250,7 +226,7 @@
     </widget>
    </item>
    <item row="1" column="0" colspan="8">
-    <widget class="QListWidget" name="listWidget">
+    <widget class="QListWidget" name="LISTwidget">
      <property name="font">
       <font>
        <pointsize>10</pointsize>
@@ -260,8 +236,6 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="resource.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

@@ -17,9 +17,15 @@ public:
 signals:
     void loginSuccess();
 
+public slots:
+    void onThemeChanged();
+
 private slots:
-    void on_pushButton_clicked();
+    void onLOGINbtnClicked();
 
 private:
     Ui::LoginWidget *ui;
+
+    bool isPasswordVisible = false;
+    QToolButton *toggleButton = nullptr;
 };

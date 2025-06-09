@@ -20,14 +20,14 @@ inline bool isHashFileExists() {
     return file.exists();
 }
 
-std::vector<unsigned char> encryptAES256(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv);
-std::vector<unsigned char> decryptAES256(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& key, const std::vector<unsigned char>& iv);
+std::vector<uint8_t> encryptAES256(const std::vector<uint8_t>& plaintext, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv);
+std::vector<uint8_t> decryptAES256(const std::vector<uint8_t>& ciphertext, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv);
 
-bool loadHashAndSaltFromFile(std::vector<unsigned char> &storedSalt, std::vector<unsigned char> &storedHash);
-void saveHashAndSaltToFile(const std::vector<unsigned char> &Salt, const std::vector<unsigned char> &Hash);
+bool loadHashAndSaltFromFile(std::vector<uint8_t> &storedSalt, std::vector<uint8_t> &storedHash);
+void saveHashAndSaltToFile(const std::vector<uint8_t> &Salt, const std::vector<uint8_t> &Hash);
 
-std::vector<unsigned char> generatePBKDF2Hash(const QString &password, const std::vector<unsigned char> &salt);
-std::vector<unsigned char> generateScryptKey(const QString &password, const std::vector<unsigned char> &salt);
+std::vector<uint8_t> generatePBKDF2Hash(const QString &password, const std::vector<uint8_t> &salt);
+std::vector<uint8_t> generateScryptKey(const QString &password, const std::vector<uint8_t> &salt);
 
-std::vector<unsigned char> generateSalt();
-std::vector<unsigned char> generateIV();
+std::vector<uint8_t> generateSalt();
+std::vector<uint8_t> generateIV();

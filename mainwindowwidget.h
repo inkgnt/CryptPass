@@ -16,20 +16,27 @@ public:
 
 signals:
     void lockRequested();
+    void themeChanged();
+
+public slots:
+    void onThemeChanged();
 
 private slots:
-    void on_pushButton_clicked();
+    void onSEARCHlineTextChanged(const QString &arg1);
 
-    void on_pushButton_2_clicked();
+    void onADDPSWDbtnClicked();
+    void onDELPSWDbtnClicked();
+    void onLOCKbtnClicked();
+    void onIMPORTbtnClicked();
+    void onEXPORTbtnClicked();
+    void onSETTINGSbtnClicked();
 
     void onSyncRequested();
-
-    void on_lineEdit_textChanged(const QString &arg1);
-
-    void on_pushButton_4_clicked();
 
 private:
     Ui::MainWindowWidget *ui;
 
     void loadDataToList(const QString& filter);
+
+    void changeIcons();
 };
