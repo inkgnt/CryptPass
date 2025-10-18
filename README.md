@@ -85,3 +85,9 @@ The application provides:
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
+## Third-party licenses
+
+This project uses the OpenSSL library, which is licensed under the
+[Apache License 2.0](https://github.com/openssl/openssl/blob/master/LICENSE.txt).
+
+Copyright (c) 1998-2025 The OpenSSL Project Authors
