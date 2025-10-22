@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTimer>
 #include <mutex>
+#include <QRandomGenerator>
 
 class KeyManager : public QObject
 {
