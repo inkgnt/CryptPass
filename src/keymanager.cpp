@@ -63,12 +63,16 @@ void KeyManager::clearKey()
 void KeyManager::clearKeyUnsafe()
 {
     if (initialized) {
+        std::generate(key.begin(), key.end(), []() {
+            return static_cast<uint8_t>(QRandomGenerator::system()->generate() & 0xFF);
+        });
         std::fill(key.begin(), key.end(), 0);
         initialized = false;
 
         emit keyCleared();
     }
 }
+
 
 bool KeyManager::isSessionValid() const
 {
