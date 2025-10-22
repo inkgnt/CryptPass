@@ -66,6 +66,7 @@ void KeyManager::clearKeyUnsafe()
         std::generate(key.begin(), key.end(), []() {
             return static_cast<uint8_t>(QRandomGenerator::system()->generate() & 0xFF);
         });
+        std::fill(key.begin(), key.end(), 0);
         initialized = false;
 
         emit keyCleared();
