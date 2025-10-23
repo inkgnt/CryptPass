@@ -1,6 +1,7 @@
 #include "databasemanager.h"
-
 #include <QSqlQuery>
+#include <QSqlError>
+#include <QDebug>
 
 DatabaseManager& DatabaseManager::instance()
 {
@@ -16,12 +17,26 @@ bool DatabaseManager::openDatabase(const QString &dbPath)
 {
     closeDatabase();
 
-    m_database = QSqlDatabase::addDatabase("QSQLITE", "passDB");
+    qDebug() << "Available SQL drivers:" << QSqlDatabase::drivers();
+
+    m_database = QSqlDatabase::addDatabase("QSQLITE");
+    qDebug() << "Attempting to use driver:" << m_database.driverName();
+
     m_database.setDatabaseName(dbPath);
 
-    if (!m_database.open())
+    if (!m_database.open()) {
+        qDebug() << "Failed to open database!";
+        qDebug() << "Database error:" << m_database.lastError().text();
         return false;
+    }
 
+    QSqlQuery query(m_database);
+    if (!query.exec("PRAGMA key = 'mysecretpassword';")) {
+        qDebug() << "Failed to set key:" << query.lastError().text();
+        return false;
+    }
+
+    qDebug() << "Database opened successfully:" << dbPath;
     return true;
 }
 
@@ -35,6 +50,8 @@ void DatabaseManager::closeDatabase()
 
     if (QSqlDatabase::contains(cname))
         QSqlDatabase::removeDatabase(cname);
+
+    qDebug() << "Database connection closed:" << cname;
 }
 
 bool DatabaseManager::createTables()
@@ -47,10 +64,14 @@ bool DatabaseManager::createTables()
                                "password BLOB NOT NULL"
                                ")";
 
+    query.exec("PRAGMA key = 'mysecretpassword';");
     if (!query.exec(createTableQuery))
     {
+        qDebug() << "Failed to create tables:" << query.lastError().text();
         return false;
     }
+
+    qDebug() << "Tables created successfully.";
     return true;
 }
 
@@ -62,9 +83,12 @@ bool DatabaseManager::addRecord(const QString &url, const QByteArray &login, con
     query.bindValue(":login", login);
     query.bindValue(":password", encryptedPassword);
 
-    if (!query.exec())
+    if (!query.exec()) {
+        qDebug() << "Failed to add record:" << query.lastError().text();
         return false;
+    }
 
+    qDebug() << "Record added successfully:" << url;
     return true;
 }
 
@@ -74,9 +98,12 @@ bool DatabaseManager::deleteRecord(int id)
     query.prepare("DELETE FROM passwords WHERE id = :id");
     query.bindValue(":id", id);
 
-    if (!query.exec())
+    if (!query.exec()) {
+        qDebug() << "Failed to delete record:" << query.lastError().text();
         return false;
+    }
 
+    qDebug() << "Record deleted successfully:" << id;
     return true;
 }
 
@@ -84,9 +111,10 @@ QList<PasswordRecord> DatabaseManager::getAllRecords() const
 {
     QList<PasswordRecord> records;
     QSqlQuery query(m_database);
-    if (!query.exec("SELECT id, url, login, password FROM passwords"))
+    if (!query.exec("SELECT id, url, login, password FROM passwords")) {
+        qDebug() << "Failed to retrieve records:" << query.lastError().text();
         return {};
-
+    }
 
     while (query.next())
     {
@@ -97,5 +125,7 @@ QList<PasswordRecord> DatabaseManager::getAllRecords() const
         rec.password = query.value(3).toByteArray();
         records.append(rec);
     }
+
+    qDebug() << "Total records retrieved:" << records.size();
     return records;
 }

@@ -36,7 +36,7 @@ find_package(OpenSSL REQUIRED)
 # ==========================================================
 # Sources
 # ==========================================================
-set(SOURCES
+set(SOURCES_LIST
     src/main.cpp
     src/crypto.cpp
     src/keymanager.cpp
@@ -50,7 +50,7 @@ set(SOURCES
     src/passwordcardwidget.cpp
 )
 
-set(HEADERS
+set(HEADERS_LIST
     src/crypto.h
     src/keymanager.h
     src/mainapp.h
@@ -63,7 +63,7 @@ set(HEADERS
     src/passwordcardwidget.h
 )
 
-set(UI
+set(UI_LIST
     ui/mainapp.ui
     ui/registerwidget.ui
     ui/loginwidget.ui
@@ -73,7 +73,7 @@ set(UI
     ui/passwordcardwidget.ui
 )
 
-set(RESOURCES
+set(RESOURCES_LIST
     resources/resource.qrc
 )
 
@@ -83,10 +83,10 @@ set(RESOURCES
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(CryptPass
         MANUAL_FINALIZATION
-        ${SOURCES}
-        ${HEADERS}
-        ${UI}
-        ${RESOURCES}
+        ${SOURCES_LIST}
+        ${HEADERS_LIST}
+        ${UI_LIST}
+        ${RESOURCES_LIST}
     )
     qt_finalize_executable(CryptPass)
 endif()
@@ -106,20 +106,16 @@ endif()
 # ==========================================================
 # Target properties & install
 # ==========================================================
-set_target_properties(CryptPass PROPERTIES
-    WIN32_EXECUTABLE TRUE                     # Убирает консольное окно у GUI-приложений (Windows)
-)
-
 include(GNUInstallDirs)
 
 install(TARGETS CryptPass
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}   # .exe или ELF
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}   # .exe / ELF
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}   # .dll / .so
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}   # .lib / .a
 )
 
 # ==========================================================
-# Deployment (Windows only)
+# Deployment (Windows only (for now))
 # ==========================================================
 if (WIN32)
     get_target_property(QT_QMAKE_EXECUTABLE Qt${QT_VERSION_MAJOR}::windeployqt IMPORTED_LOCATION)
@@ -128,5 +124,23 @@ if (WIN32)
 
     add_custom_command(TARGET CryptPass POST_BUILD
         COMMAND "${WINDEPLOYQT_EXECUTABLE}" --release "$<TARGET_FILE:CryptPass>"
+    )
+
+     add_custom_command(TARGET CryptPass POST_BUILD
+        COMMAND "${CMAKE_SOURCE_DIR}/sqlcipher-plugin-build.bat"
+            "$<CONFIG>"
+            #"${CMAKE_INSTALL_PREFIX}"
+            #"${Qt6_DIR}"
+    )
+
+
+    add_custom_command(TARGET CryptPass POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:CryptPass>/sqldrivers"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/sqlcipher-plugin/install/plugins/sqldrivers/qsqlite.dll"
+            "$<TARGET_FILE_DIR:CryptPass>/sqldrivers/qsqlite.dll"
+    )
+    set_target_properties(CryptPass PROPERTIES
+        WIN32_EXECUTABLE TRUE
     )
 endif()

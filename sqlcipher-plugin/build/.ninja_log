@@ -1,0 +1,21 @@
+# ninja log v5
+18	1517	7829515667513829	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/qsql_sqlite.cpp.obj	47b69766cb841327
+254	278	7829484782168698	C:/Users/admin/Documents/qtsrc/CryptPass/sqlcipher-plugin/build/sqlite/QSQLiteDriverPlugin_resource.rc	18146627b1f60123
+296	366	7829484783042914	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/QSQLiteDriverPlugin_resource.rc.res	fce77b49b5bcb56b
+27	8036	7829515732650302	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/__/sqlcipher_am/sqlite3.c.obj	3b51d8463d342258
+21	940	7829515661760881	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/qsql_sqlite_vfs.cpp.obj	8944d7659d15387d
+24	882	7829515661187018	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/smain.cpp.obj	2c8ebe52708133b3
+8036	8226	7829515734438317	plugins/sqldrivers/qsqlite.dll	e572160388085c67
+14	43	7829515652749255	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/QSQLiteDriverPlugin_autogen/mocs_compilation.cpp.obj	2b2d60c9d26f437c
+14	168	7829499755785910	sqlite/QSQLiteDriverPlugin_autogen/timestamp	b31bbc133c2c7c28
+14	168	7829499755785910	C:/Users/admin/Documents/qtsrc/CryptPass/sqlcipher-plugin/build/sqlite/QSQLiteDriverPlugin_autogen/mocs_compilation.cpp	b31bbc133c2c7c28
+1428	1654	7829481677824848	plugins/sqldrivers/qsqlited.dll	ee8a5e2712996a4f
+14	168	7829499755785910	C:/Users/admin/Documents/qtsrc/CryptPass/sqlcipher-plugin/build/sqlite/QSQLiteDriverPlugin_autogen/timestamp	b31bbc133c2c7c28
+14	168	7829499755785910	sqlite/QSQLiteDriverPlugin_autogen/mocs_compilation.cpp	b31bbc133c2c7c28
+254	278	7829484782168698	sqlite/QSQLiteDriverPlugin_resource.rc	18146627b1f60123
+14	42	7829517454476641	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/QSQLiteDriverPlugin_autogen/mocs_compilation.cpp.obj	b6e2e110e5fd3ba3
+23	896	7829517463017355	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/smain.cpp.obj	7039ca0e0782716
+21	991	7829517463930454	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/qsql_sqlite_vfs.cpp.obj	41b4d0af1ecd4719
+17	1480	7829517468830131	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/qsql_sqlite.cpp.obj	48ad4107e1d74c12
+27	8021	7829517534168581	sqlite/CMakeFiles/QSQLiteDriverPlugin.dir/__/sqlcipher_am/sqlite3.c.obj	9978816b920e39a4
+8022	8209	7829517535864626	plugins/sqldrivers/qsqlite.dll	e572160388085c67
