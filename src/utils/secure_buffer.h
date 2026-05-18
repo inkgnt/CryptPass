@@ -8,7 +8,9 @@
 #include <stdexcept>
 #include <cstdint>
 #include <QDebug>
-
+namespace {
+    size_t counter;
+}
 class SecureBuffer
 {
 public:
@@ -19,7 +21,7 @@ public:
         if (size_ == 0) return;
 
         data_ = (uint8_t*)sodium_malloc(size_);
-        qDebug() << "sodium_malloc triggered";
+        qDebug() << "sodium_malloc"  << counter++ <<" triggered";
         if (!data_) {
             qDebug() << "sodium_malloc failure";
             throw std::bad_alloc();

@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
     v.show();
 
 #ifdef _WIN32
-    HWND id = reinterpret_cast<HWND>(v.winId());
-    SetWindowDisplayAffinity(id, WDA_EXCLUDEFROMCAPTURE);
+    //HWND id = reinterpret_cast<HWND>(v.winId());
+    //SetWindowDisplayAffinity(id, WDA_EXCLUDEFROMCAPTURE);
 #elif defined(__APPLE__)
     id nsView = reinterpret_cast<id>(v.winId());
 

@@ -31,66 +31,90 @@ SecureFontRenderer::FontMetrics SecureFontRenderer::getMetrics() const {
     return { ascent * scale, descent * scale, (ascent - descent) * scale };
 }
 
-float SecureFontRenderer::calculateTextWidth(const SecureBuffer& text, size_t textLen) const {
+float SecureFontRenderer::calculateTextWidth(const uint8_t* textData, size_t textLen) const {
     if (!m_fontLoaded || textLen == 0) return 0.0f;
     float scale = stbtt_ScaleForMappingEmToPixels(&m_fontInfo, m_fontSize);
     float width = 0.0f;
-    const uint8_t* ptr = text.data();
+    uint32_t prevCp = 0;
+    const uint8_t* ptr = textData;
     const uint8_t* end = ptr + textLen;
 
     while (ptr < end) {
         uint32_t cp = nextUtf8Codepoint(ptr, end);
         if (cp == 0) break;
+
+        if (prevCp != 0) {
+            width += stbtt_GetCodepointKernAdvance(&m_fontInfo, prevCp, cp) * scale;
+        }
+
         int advanceWidth, lsb;
         stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &advanceWidth, &lsb);
         width += advanceWidth * scale;
+
+        prevCp = cp;
     }
 
     return width;
 }
 
-float SecureFontRenderer::charIndexToOffset(int targetIdx, const SecureBuffer& text, size_t textLen) const {
+float SecureFontRenderer::charIndexToOffset(int targetIdx, const uint8_t* textData, size_t textLen) const {
     if (!m_fontLoaded || textLen == 0) return 0.0f;
     float scale = stbtt_ScaleForMappingEmToPixels(&m_fontInfo, m_fontSize);
     float offset = 0.0f;
     int idx = 0;
-    const uint8_t* ptr = text.data();
+    uint32_t prevCp = 0;
+    const uint8_t* ptr = textData;
     const uint8_t* end = ptr + textLen;
 
     while (ptr < end && idx < targetIdx) {
         uint32_t cp = nextUtf8Codepoint(ptr, end);
+
+        if (prevCp != 0) {
+            offset += stbtt_GetCodepointKernAdvance(&m_fontInfo, prevCp, cp) * scale;
+        }
+
         int advanceWidth, lsb;
         stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &advanceWidth, &lsb);
         offset += advanceWidth * scale;
+
+        prevCp = cp;
         idx++;
     }
 
     return offset;
 }
 
-int SecureFontRenderer::offsetToCharIndex(float offsetX, const SecureBuffer& text, size_t textLen) const {
+int SecureFontRenderer::offsetToCharIndex(float offsetX, const uint8_t* textData, size_t textLen) const {
     if (!m_fontLoaded || textLen == 0) return 0;
     float scale = stbtt_ScaleForMappingEmToPixels(&m_fontInfo, m_fontSize);
     float currentX = 0.0f;
     int charIdx = 0;
-    const uint8_t* ptr = text.data();
+    uint32_t prevCp = 0;
+    const uint8_t* ptr = textData;
     const uint8_t* end = ptr + textLen;
 
     while (ptr < end) {
         uint32_t cp = nextUtf8Codepoint(ptr, end);
+
+        if (prevCp != 0) {
+            currentX += stbtt_GetCodepointKernAdvance(&m_fontInfo, prevCp, cp) * scale;
+        }
+
         int advanceWidth, lsb;
         stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &advanceWidth, &lsb);
         float step = advanceWidth * scale;
         if (offsetX < currentX + step / 2.0f) return charIdx;
         currentX += step;
         charIdx++;
+
+        prevCp = cp;
     }
 
     return charIdx;
 }
 
 void SecureFontRenderer::renderText(
-    const SecureBuffer& text, size_t textLen,
+    const uint8_t* textData, size_t textLen,
     const QRect& cRect, qreal dpr,
     Qt::Alignment alignment,
     float scrollOffset,
@@ -110,13 +134,19 @@ void SecureFontRenderer::renderText(
     float physScale = stbtt_ScaleForMappingEmToPixels(&m_fontInfo, m_fontSize * dpr);
 
     float physTextWidth = 0.0f;
-    const uint8_t* wPtr = text.data();
+    uint32_t prevCpWidth = 0;
+    const uint8_t* wPtr = textData;
     const uint8_t* wEnd = wPtr + textLen;
     while (wPtr < wEnd) {
         uint32_t cp = nextUtf8Codepoint(wPtr, wEnd);
+
+        if (prevCpWidth != 0) physTextWidth += stbtt_GetCodepointKernAdvance(&m_fontInfo, prevCpWidth, cp) * physScale;
+
         int aw, lsb;
         stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &aw, &lsb);
         physTextWidth += aw * physScale;
+
+        prevCpWidth = cp;
     }
 
     int ascent, descent, lineGap;
@@ -160,34 +190,44 @@ void SecureFontRenderer::renderText(
     size_t maxGlyphBytes = std::ceil((boxX1 - boxX0) * physScale) * std::ceil((boxY1 - boxY0) * physScale);
     if (m_glyphBuffer.size() < maxGlyphBytes) m_glyphBuffer = SecureBuffer(maxGlyphBytes);
 
-    const uint8_t* ptr = text.data();
+    const uint8_t* ptr = textData;
     const uint8_t* end = ptr + textLen;
     int charIdx = 0;
+    uint32_t prevCpRender = 0;
 
     while (ptr < end) {
         uint32_t cp = nextUtf8Codepoint(ptr, end);
         if (cp == 0) break;
+
+        if (prevCpRender != 0) {
+            cursorX += stbtt_GetCodepointKernAdvance(&m_fontInfo, prevCpRender, cp) * physScale;
+        }
 
         bool isSelected = hasSelection && (charIdx >= selMin && charIdx < selMax);
         uint32_t rColor = isSelected ? hR : nR;
         uint32_t gColor = isSelected ? hG : nG;
         uint32_t bColor = isSelected ? hB : nB;
 
+        float x_shift = cursorX - std::floor(cursorX);
+        float y_shift = cursorY - std::floor(cursorY);
+
         int x0, y0, x1, y1;
-        stbtt_GetCodepointBitmapBox(&m_fontInfo, cp, physScale, physScale, &x0, &y0, &x1, &y1);
+        stbtt_GetCodepointBitmapBoxSubpixel(&m_fontInfo, cp, physScale, physScale, x_shift, y_shift, &x0, &y0, &x1, &y1);
+
         int glyphWidth = x1 - x0;
         int glyphHeight = y1 - y0;
 
         if (glyphWidth > 0 && glyphHeight > 0) {
             if (static_cast<size_t>(glyphWidth * glyphHeight) <= m_glyphBuffer.size()) {
-                stbtt_MakeCodepointBitmap(&m_fontInfo, m_glyphBuffer.data(), glyphWidth, glyphHeight, glyphWidth, physScale, physScale, cp);
+                stbtt_MakeCodepointBitmapSubpixel(&m_fontInfo, m_glyphBuffer.data(), glyphWidth, glyphHeight, glyphWidth, physScale, physScale, x_shift, y_shift, cp);
 
-                int baseDrawX = static_cast<int>(std::round(cursorX)) + x0;
-                int baseDrawY = static_cast<int>(std::round(cursorY)) + y0;
+                int baseDrawX = static_cast<int>(std::floor(cursorX)) + x0;
+                int baseDrawY = static_cast<int>(std::floor(cursorY)) + y0;
                 int startX = qMax(0, -baseDrawX);
                 int startY = qMax(0, -baseDrawY);
                 int endX = qMin(glyphWidth, m_imageWidth - baseDrawX);
                 int endY = qMin(glyphHeight, m_imageHeight - baseDrawY);
+
 
                 for (int y = startY; y < endY; ++y) {
                     const uint8_t* alphaRow = m_glyphBuffer.data() + (y * glyphWidth);
@@ -195,6 +235,7 @@ void SecureFontRenderer::renderText(
                     for (int x = startX; x < endX; ++x) {
                         uint8_t alpha = alphaRow[x];
                         if (alpha > 0) {
+
                             uint32_t bg = destRow[baseDrawX + x];
                             if (bg == 0) {
                                 uint32_t r = (rColor * alpha) / 255;
@@ -224,6 +265,8 @@ void SecureFontRenderer::renderText(
         int advanceWidth, leftSideBearing;
         stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &advanceWidth, &leftSideBearing);
         cursorX += advanceWidth * physScale;
+
+        prevCpRender = cp;
         charIdx++;
     }
 }

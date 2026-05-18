@@ -10,7 +10,6 @@
 
 // TODO remove SecureBuffer and add pointers instead
 
-
 class SecureFontRenderer {
 public:
     SecureFontRenderer() = default;
@@ -29,14 +28,14 @@ public:
     };
     FontMetrics getMetrics() const;
 
-    float calculateTextWidth(const SecureBuffer& text, size_t textLen) const;
+    float calculateTextWidth(const uint8_t* textData, size_t textLen) const;
 
-    float charIndexToOffset(int targetIdx, const SecureBuffer& text, size_t textLen) const;
+    float charIndexToOffset(int targetIdx, const uint8_t* textData, size_t textLen) const;
 
-    int offsetToCharIndex(float offsetX, const SecureBuffer& text, size_t textLen) const;
+    int offsetToCharIndex(float offsetX, const uint8_t* textData, size_t textLen) const;
 
     void renderText(
-        const SecureBuffer& text, size_t textLen,
+        const uint8_t* textData, size_t textLen,
         const QRect& cRect, qreal dpr,
         Qt::Alignment alignment,
         float scrollOffset,
@@ -54,7 +53,7 @@ private:
     stbtt_fontinfo m_fontInfo;
     bool m_fontLoaded = false;
 
-    float m_fontSize = 14.0f;
+    float m_fontSize = 16.0f;
 
     SecureBuffer m_pixelBuffer;
     size_t m_pixelBufferCapacity = 0;

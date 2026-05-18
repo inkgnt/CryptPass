@@ -37,7 +37,6 @@ void SecureTextWidget::initStyleOptionForText(QStyleOptionFrame *opt) const {
     }
 }
 
-
 SecureBuffer SecureTextWidget::getSecureText() const {
     if (m_textLen == 0)
         return SecureBuffer();
@@ -84,24 +83,36 @@ size_t SecureTextWidget::charIndexToByteOffset(int targetIdx) const {
     return ptr - m_textBuffer.data();
 }
 
-SecureBuffer SecureTextWidget::getRenderText(size_t& outLen) const {
+const uint8_t* SecureTextWidget::getRenderData(size_t& outLen) const {
     if (!m_obfuscated) {
         outLen = m_textLen;
-        SecureBuffer copy(m_textLen);
-        std::memcpy(copy.data(), m_textBuffer.data(), m_textLen);
-        return copy;
+        return m_textBuffer.data();
+    } else {
+        outLen = totalChars() * 3;
+        return m_obfuscationBuffer.data();
     }
+}
+
+void SecureTextWidget::updateObfuscationBuffer() {
+    if (!m_obfuscated) return;
 
     int count = totalChars();
-    outLen = count * 3;
-    SecureBuffer dots(outLen);
-    for (int i = 0; i < count; ++i) {
-        dots.data()[i * 3 + 0] = 0xE2;
-        dots.data()[i * 3 + 1] = 0x80;
-        dots.data()[i * 3 + 2] = 0xA2;
+    size_t reqLen = count * 3;
+
+
+    if (reqLen > m_obfuscationCapacity || m_obfuscationBuffer.empty()) {
+        m_obfuscationCapacity = reqLen + 64;
+        m_obfuscationBuffer = SecureBuffer(m_obfuscationCapacity);
     }
-    return dots;
+
+    uint8_t* ptr = m_obfuscationBuffer.data();
+    for (int i = 0; i < count; ++i) {
+        ptr[i * 3 + 0] = 0xE2;
+        ptr[i * 3 + 1] = 0x80;
+        ptr[i * 3 + 2] = 0xA2;
+    }
 }
+
 
 QSize SecureTextWidget::minimumSizeHint() const {
     if (!m_renderer.isLoaded())
@@ -110,8 +121,8 @@ QSize SecureTextWidget::minimumSizeHint() const {
     float textWidth = 0.0f;
     if (m_textLen > 0) {
         size_t renderLen = 0;
-        SecureBuffer buf = getRenderText(renderLen);
-        textWidth = m_renderer.calculateTextWidth(buf, renderLen);
+        const uint8_t* renderData = getRenderData(renderLen);
+        textWidth = m_renderer.calculateTextWidth(renderData, renderLen);
     } else if (!m_placeholderText.isEmpty()) {
         QFont f = font();
         f.setPixelSize(static_cast<int>(m_fontSize));
@@ -173,14 +184,14 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
     }
 
     size_t renderLen = 0;
-    SecureBuffer renderBuf = getRenderText(renderLen);
+    const uint8_t* renderData = getRenderData(renderLen);
 
     int selMin = qMin(m_selectionStartCharIdx, m_cursorCharIdx);
     int selMax = qMax(m_selectionStartCharIdx, m_cursorCharIdx);
 
     if (m_needsRender) {
         m_renderer.renderText(
-            renderBuf, renderLen, cRect, devicePixelRatioF(), m_alignment,
+            renderData, renderLen, cRect, devicePixelRatioF(), m_alignment,
             m_scrollOffset,
             selMin, selMax, palette().color(foregroundRole()), palette().color(QPalette::HighlightedText),
             m_textStartX, m_textStartY
@@ -193,8 +204,8 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
     auto metrics = m_renderer.getMetrics();
 
     if (selMin != selMax && renderLen > 0) {
-        float x1 = m_renderer.charIndexToOffset(selMin, renderBuf, renderLen);
-        float x2 = m_renderer.charIndexToOffset(selMax, renderBuf, renderLen);
+        float x1 = m_renderer.charIndexToOffset(selMin, renderData, renderLen);
+        float x2 = m_renderer.charIndexToOffset(selMax, renderData, renderLen);
         QRectF highlightRect(globalStartX + x1, globalStartY, x2 - x1, metrics.textHeight);
         painter.fillRect(highlightRect, palette().color(QPalette::Highlight));
     }
@@ -208,7 +219,7 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
 
     if (hasFocus() && m_cursorVisible) {
         painter.setPen(palette().color(foregroundRole()));
-        float cursorOffset = m_renderer.charIndexToOffset(m_cursorCharIdx, renderBuf, renderLen);
+        float cursorOffset = m_renderer.charIndexToOffset(m_cursorCharIdx, renderData, renderLen);
         float cx = globalStartX + cursorOffset;
         painter.drawLine(QPointF(cx, globalStartY), QPointF(cx, globalStartY + metrics.textHeight));
     }
@@ -227,7 +238,6 @@ void SecureTextWidget::changeEvent(QEvent *event) {
         event->type() == QEvent::FontChange
         )
     {
-
         m_renderer.setFontSize(m_fontSize);
 
         m_needsRender = true;

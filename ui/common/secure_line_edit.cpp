@@ -22,7 +22,7 @@ QSize SecureLineEdit::sizeHint() const {
 
     SecureBuffer xChar(1);
     xChar.data()[0] = 'x';
-    int charWidth = std::round(m_renderer.calculateTextWidth(xChar, 1));
+    int charWidth = std::round(m_renderer.calculateTextWidth(xChar.data(), 1));
     if (charWidth == 0) charWidth = 10;
 
     int defaultWidth = 15 * charWidth;
@@ -37,14 +37,14 @@ QSize SecureLineEdit::sizeHint() const {
 
 void SecureLineEdit::ensureCursorVisible() {
     size_t renderLen = 0;
-    SecureBuffer buf = getRenderText(renderLen);
+    const uint8_t* renderData = getRenderData(renderLen);
     if (renderLen == 0) {
         m_scrollOffset = 0.0f;
         return;
     }
 
-    float cursorLogicalX = m_renderer.charIndexToOffset(m_cursorCharIdx, buf, renderLen);
-    float textWidth = m_renderer.calculateTextWidth(buf, renderLen);
+    float cursorLogicalX = m_renderer.charIndexToOffset(m_cursorCharIdx, renderData, renderLen);
+    float textWidth = m_renderer.calculateTextWidth(renderData, renderLen);
     QRect cRect = textRect();
 
     const float cursorMargin = 4.0f;
@@ -86,6 +86,8 @@ bool SecureLineEdit::deleteSelectedText() {
     sodium_memzero(m_textBuffer.data() + m_textLen - bytesToDelete, bytesToDelete);
     m_textLen -= bytesToDelete;
 
+    updateObfuscationBuffer();
+
     m_cursorCharIdx = minIdx;
     m_selectionStartCharIdx = minIdx;
     return true;
@@ -115,6 +117,8 @@ void SecureLineEdit::insertText(const SecureBuffer& utf8) {
     }
     m_textLen = newLen;
 
+    updateObfuscationBuffer();
+
     int insertedChars = 0;
     const uint8_t* p = utf8.data();
     const uint8_t* e = p + utf8.size();
@@ -133,10 +137,10 @@ void SecureLineEdit::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
 
         size_t renderLen = 0;
-        SecureBuffer buf = getRenderText(renderLen);
+        const uint8_t* renderData = getRenderData(renderLen);
 
         float localX = event->pos().x() - (textRect().left() + m_textStartX);
-        m_cursorCharIdx = m_renderer.offsetToCharIndex(localX, buf, renderLen);
+        m_cursorCharIdx = m_renderer.offsetToCharIndex(localX, renderData, renderLen);
 
         if (!(event->modifiers() & Qt::ShiftModifier)) {
             m_selectionStartCharIdx = m_cursorCharIdx;
@@ -151,33 +155,42 @@ void SecureLineEdit::mousePressEvent(QMouseEvent *event) {
     }
 }
 
-
-// TODO SCROLL ACCELERATION
 void SecureLineEdit::mouseMoveEvent(QMouseEvent *event) {
     if (event->buttons() & Qt::LeftButton) {
         QRect cRect = textRect();
         int x = event->pos().x();
 
-        if (x < cRect.left()) {
+        if (x < cRect.left())
+        {
             m_autoScrollDirection = -1;
-            if (m_autoScrollTimerId == 0) m_autoScrollTimerId = startTimer(5);
-        }
 
-        else if (x > cRect.right()) {
+            int distance = cRect.left() - x;
+
+            m_autoScrollStep = qMin(1 + (distance * distance) / 200, 60 ) ;
+            if (m_autoScrollTimerId == 0)
+                m_autoScrollTimerId = startTimer(m_autoScrollTimerValue);
+        }
+        else if (x > cRect.right())
+        {
             m_autoScrollDirection = 1;
-            if (m_autoScrollTimerId == 0) m_autoScrollTimerId = startTimer(5);
-        }
 
-        else {
+            int distance = x - cRect.right();
+
+            m_autoScrollStep = qMin(1 + (distance * distance) / 200, 60);
+            if (m_autoScrollTimerId == 0)
+                m_autoScrollTimerId = startTimer(m_autoScrollTimerValue);
+        }
+        else
+        {
             if (m_autoScrollTimerId != 0) {
                 killTimer(m_autoScrollTimerId);
                 m_autoScrollTimerId = 0;
             }
 
             size_t renderLen = 0;
-            SecureBuffer buf = getRenderText(renderLen);
+            const uint8_t* renderData = getRenderData(renderLen);
             float localX = x - (cRect.left() + m_textStartX);
-            m_cursorCharIdx = m_renderer.offsetToCharIndex(localX, buf, renderLen);
+            m_cursorCharIdx = m_renderer.offsetToCharIndex(localX, renderData, renderLen);
 
             m_needsRender = true;
             ensureCursorVisible();
@@ -190,20 +203,17 @@ void SecureLineEdit::mouseReleaseEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton && m_autoScrollTimerId != 0) {
         killTimer(m_autoScrollTimerId);
         m_autoScrollTimerId = 0;
+        m_autoScrollStep = 1;
+        m_autoScrollDirection = 0;
     }
     SecureTextWidget::mouseReleaseEvent(event);
 }
-
-
-
 
 void SecureLineEdit::keyPressEvent(QKeyEvent *event) {
     if (event->matches(QKeySequence::SelectAll)) {
         m_selectionStartCharIdx = 0;
         m_cursorCharIdx = totalChars();
-        m_needsRender = true;
-        ensureCursorVisible();
-        update();
+        m_needsRender = true; ensureCursorVisible(); update();
         return;
     }
 
@@ -250,7 +260,8 @@ void SecureLineEdit::keyPressEvent(QKeyEvent *event) {
             SecureBuffer utf8(tempUtf8.size());
             std::memcpy(utf8.data(), tempUtf8.constData(), tempUtf8.size());
             insertText(utf8);
-            sodium_memzero(const_cast<char*>(tempUtf8.data()), tempUtf8.capacity());
+
+            sodium_memzero(tempUtf8.data(), tempUtf8.size());
         }
     }
 
@@ -295,9 +306,9 @@ void SecureLineEdit::timerEvent(QTimerEvent *event) {
         int oldIdx = m_cursorCharIdx;
 
         if (m_autoScrollDirection < 0) {
-            m_cursorCharIdx = qMax(0, m_cursorCharIdx - 1);
+            m_cursorCharIdx = qMax(0, m_cursorCharIdx - m_autoScrollStep);
         } else {
-            m_cursorCharIdx = qMin(totalChars(), m_cursorCharIdx + 1);
+            m_cursorCharIdx = qMin(totalChars(), m_cursorCharIdx + m_autoScrollStep);
         }
 
         if (oldIdx != m_cursorCharIdx) {

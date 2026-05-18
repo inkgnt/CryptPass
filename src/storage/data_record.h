@@ -36,6 +36,9 @@
  * output length = 32 )
  */
 
+// TODO add widget that allows user to form custom record
+// TODO add table with users tags
+
 struct DataRecord { //TODO: migrate to DataRecord_v1
     int id;
     QString url;

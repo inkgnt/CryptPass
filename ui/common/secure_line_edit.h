@@ -33,7 +33,8 @@ protected:
 
 private:
     int m_cursorTimerId = 0;
-
+    int m_autoScrollTimerValue = 30; //ms
+    int m_autoScrollStep = 1;
     int m_autoScrollTimerId = 0;
     int m_autoScrollDirection = 0;
 };

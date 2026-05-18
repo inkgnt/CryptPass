@@ -2,6 +2,7 @@
 
 #include "data_record.h"
 #include "sqlite3.h"
+
 /*
 class DataManager {
 public:

@@ -46,7 +46,8 @@ protected:
 
 
     //replace SecureBuffer with ptr
-    SecureBuffer getRenderText(size_t& outLen) const;
+    const uint8_t* getRenderData(size_t& outLen) const;
+    void updateObfuscationBuffer();
 
     SecureBuffer m_textBuffer;
     size_t m_textLen = 0;
@@ -60,7 +61,10 @@ protected:
     float m_scrollOffset = 0.0f;
 
     Qt::Alignment m_alignment = Qt::AlignLeft | Qt::AlignVCenter;
+
     bool m_obfuscated = false;
+    SecureBuffer m_obfuscationBuffer;
+    size_t m_obfuscationCapacity = 0;
 
     float m_textStartX = 0;
     float m_textStartY = 0;

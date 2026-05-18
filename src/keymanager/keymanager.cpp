@@ -40,7 +40,6 @@ std::vector<uint8_t> KeyManager::getKey()
 
     if(!initialized)
     {
-        clearKey();
         return{};
     }
 
@@ -56,7 +55,7 @@ std::vector<uint8_t> KeyManager::getKey()
 
 void KeyManager::clearKey()
 {
-    std::lock_guard<std::mutex> lock(mtx);
+    //std::lock_guard<std::mutex> lock(mtx);
 
     if (initialized) {
         sodium_memzero(key.data(), key.size());
