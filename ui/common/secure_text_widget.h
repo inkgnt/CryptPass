@@ -1,8 +1,10 @@
 #pragma once
 
-#include <QFrame>
 #include "utils/secure_buffer.h"
 #include "secure_font_renderer.h"
+
+#include<QLineEdit>
+#include <QFrame>
 
 class SecureTextWidget : public QFrame {
     Q_OBJECT
@@ -18,6 +20,14 @@ public:
     void clear();
     SecureBuffer getSecureText() const;
 
+    int actionSpacing() const { return m_actionSpacing; }
+    void setActionSpacing(int spacing);
+
+    QMargins textMargins() const { return m_textMargins; }
+    void setTextMargins(int left, int top, int right, int bottom);
+    void setTextMargins(const QMargins &margins);
+
+    QAction* addAction(const QIcon &icon, QLineEdit::ActionPosition position);
     QString placeholderText() const { return m_placeholderText; }
     void setPlaceholderText(const QString& placeholder);
 
@@ -36,6 +46,7 @@ public:
 protected:
     void initStyleOptionForText(QStyleOptionFrame *opt) const;
 
+    void actionEvent(QActionEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void changeEvent(QEvent *event) override;
@@ -45,7 +56,6 @@ protected:
     size_t charIndexToByteOffset(int targetIdx) const;
 
 
-    //replace SecureBuffer with ptr
     const uint8_t* getRenderData(size_t& outLen) const;
     void updateObfuscationBuffer();
 
@@ -62,7 +72,7 @@ protected:
 
     Qt::Alignment m_alignment = Qt::AlignLeft | Qt::AlignVCenter;
 
-    bool m_obfuscated = false;
+    bool m_obfuscated = true;
     SecureBuffer m_obfuscationBuffer;
     size_t m_obfuscationCapacity = 0;
 
@@ -75,4 +85,15 @@ protected:
     bool m_cursorVisible = false;
 
     SecureFontRenderer m_renderer;
+
+
+    int m_actionSpacing = 0;
+    QMargins m_textMargins;
+    QMargins m_buttonMargins;
+
+private:
+
+    void updateButtonPositions();
+    QList<QToolButton*> m_leadingButtons;
+    QList<QToolButton*> m_trailingButtons;
 };

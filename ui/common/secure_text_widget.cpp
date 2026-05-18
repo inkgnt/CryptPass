@@ -1,9 +1,13 @@
 #include "secure_text_widget.h"
 #include "utils/widget_helpers.h"
-#include <QStyleOptionFrame>
-#include <QPainter>
-#include <QEvent>
+
 #include <sodium.h>
+
+#include <QPainter>
+#include <QStyleOptionFrame>
+#include <QToolButton>
+#include <QActionEvent>
+#include <QEvent>
 
 SecureTextWidget::SecureTextWidget(QWidget *parent) : QFrame(parent) {
     setAttribute(Qt::WA_StyledBackground, true);
@@ -60,12 +64,20 @@ QRect SecureTextWidget::textRect() const {
     QStyleOptionFrame opt;
     initStyleOptionForText(&opt);
 
+    QRect r;
     if (frameShape() != QFrame::NoFrame) {
-        QRect r = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
-        return r.marginsRemoved(contentsMargins());
+        r = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
     } else {
-        return rect().marginsRemoved(contentsMargins());
+        r = rect();
     }
+
+
+    r = r.marginsRemoved(contentsMargins());
+    r = r.marginsRemoved(m_textMargins);
+    r = r.marginsRemoved(m_buttonMargins);
+
+    return r;
+
 }
 int SecureTextWidget::totalChars() const {
     int count = 0;
@@ -133,6 +145,19 @@ QSize SecureTextWidget::minimumSizeHint() const {
     auto metrics = m_renderer.getMetrics();
     int textHeight = std::round(metrics.textHeight);
 
+    int maxButtonHeight = 0;
+    for (auto *btn : std::as_const(m_leadingButtons)) maxButtonHeight = qMax(maxButtonHeight, btn->sizeHint().height());
+    for (auto *btn : std::as_const(m_trailingButtons)) maxButtonHeight = qMax(maxButtonHeight, btn->sizeHint().height());
+
+    int contentHeight = qMax(textHeight, maxButtonHeight);
+
+    int totalWidth = static_cast<int>(textWidth)
+                     + m_textMargins.left() + m_textMargins.right()
+                     + m_buttonMargins.left() + m_buttonMargins.right();
+
+    int totalHeight = contentHeight
+                      + m_textMargins.top() + m_textMargins.bottom();
+
     QStyleOptionFrame opt;
     initStyleOptionForText(&opt);
     opt.rect = QRect(0, 0, 1000, 1000);
@@ -140,13 +165,13 @@ QSize SecureTextWidget::minimumSizeHint() const {
     if (frameShape() != QFrame::NoFrame) {
         QRect cRect = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
         return {
-            static_cast<int>(textWidth) + (1000 - cRect.width()) + 2,
-            textHeight + (1000 - cRect.height())
+            totalWidth + (1000 - cRect.width()) + 2,
+            totalHeight + (1000 - cRect.height())
         };
     } else {
         return {
-            static_cast<int>(textWidth) + contentsMargins().left() + contentsMargins().right() + 2,
-            textHeight + contentsMargins().top() + contentsMargins().bottom()
+            totalWidth + contentsMargins().left() + contentsMargins().right() + 2,
+            totalHeight + contentsMargins().top() + contentsMargins().bottom()
         };
     }
 }
@@ -167,20 +192,14 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
     if (cRect.isEmpty())
         return;
 
+    auto metrics = m_renderer.getMetrics();
+
     if (m_textLen == 0 && !m_placeholderText.isEmpty()) {
         painter.setPen(palette().color(QPalette::PlaceholderText));
         QFont f = font();
         f.setPixelSize(static_cast<int>(m_fontSize));
         painter.setFont(f);
         painter.drawText(cRect, m_alignment, m_placeholderText);
-
-        if (hasFocus() && m_cursorVisible) {
-            painter.setPen(palette().color(foregroundRole()));
-            int cx = cRect.left();
-            if (m_alignment & Qt::AlignHCenter) cx += cRect.width() / 2;
-            painter.drawLine(cx, cRect.top(), cx, cRect.bottom());
-        }
-        return;
     }
 
     size_t renderLen = 0;
@@ -201,16 +220,29 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
 
     float globalStartX = cRect.left() + m_textStartX;
     float globalStartY = cRect.top() + m_textStartY;
-    auto metrics = m_renderer.getMetrics();
+
+
+    if (renderLen == 0) {
+        if (m_alignment & Qt::AlignVCenter) globalStartY = cRect.top() + (cRect.height() - metrics.textHeight) / 2.0f;
+        else if (m_alignment & Qt::AlignBottom) globalStartY = cRect.bottom() - metrics.textHeight;
+        else globalStartY = cRect.top();
+
+        if (m_alignment & Qt::AlignHCenter) globalStartX = cRect.left() + cRect.width() / 2.0f;
+        else if (m_alignment & Qt::AlignRight) globalStartX = cRect.right();
+        else globalStartX = cRect.left();
+    }
+
+    painter.setClipRect(cRect);
 
     if (selMin != selMax && renderLen > 0) {
         float x1 = m_renderer.charIndexToOffset(selMin, renderData, renderLen);
         float x2 = m_renderer.charIndexToOffset(selMax, renderData, renderLen);
+
         QRectF highlightRect(globalStartX + x1, globalStartY, x2 - x1, metrics.textHeight);
         painter.fillRect(highlightRect, palette().color(QPalette::Highlight));
     }
 
-    if (!m_renderer.pixelBuffer().empty() && m_renderer.imageWidth() > 0) {
+    if (!m_renderer.pixelBuffer().empty() && m_renderer.imageWidth() > 0 && renderLen > 0) {
         QImage image(m_renderer.pixelBuffer().data(), m_renderer.imageWidth(), m_renderer.imageHeight(),
                      m_renderer.imageWidth() * 4, QImage::Format_ARGB32_Premultiplied);
         image.setDevicePixelRatio(devicePixelRatioF());
@@ -219,14 +251,25 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
 
     if (hasFocus() && m_cursorVisible) {
         painter.setPen(palette().color(foregroundRole()));
-        float cursorOffset = m_renderer.charIndexToOffset(m_cursorCharIdx, renderData, renderLen);
-        float cx = globalStartX + cursorOffset;
-        painter.drawLine(QPointF(cx, globalStartY), QPointF(cx, globalStartY + metrics.textHeight));
+
+        float cursorOffset = 0.0f;
+        if (renderLen > 0) {
+            cursorOffset = m_renderer.charIndexToOffset(m_cursorCharIdx, renderData, renderLen);
+        }
+
+        int cx = std::round(globalStartX + cursorOffset);
+        int cy = std::round(globalStartY);
+        int cHeight = std::round(metrics.textHeight);
+
+        painter.drawLine(cx, cy, cx, cy + cHeight);
     }
 }
 
 void SecureTextWidget::resizeEvent(QResizeEvent *event) {
     QFrame::resizeEvent(event);
+
+    updateButtonPositions();
+
     m_needsRender = true;
     update();
 }
@@ -240,6 +283,101 @@ void SecureTextWidget::changeEvent(QEvent *event) {
     {
         m_renderer.setFontSize(m_fontSize);
 
+        m_needsRender = true;
+        updateGeometry();
+        update();
+    }
+}
+
+
+QAction* SecureTextWidget::addAction(const QIcon &icon, QLineEdit::ActionPosition position) {
+    QAction *action = new QAction(icon, "", this);
+    QFrame::addAction(action);
+
+    QToolButton *button = new QToolButton(this);
+    button->setDefaultAction(action);
+    button->setCursor(Qt::ArrowCursor);
+    button->setFocusPolicy(Qt::NoFocus);
+    button->setStyleSheet("QToolButton { border: none; background: transparent; }");
+
+    if (position == QLineEdit::LeadingPosition) {
+        m_leadingButtons.append(button);
+    } else {
+        m_trailingButtons.append(button);
+    }
+
+    button->show();
+    updateButtonPositions();
+    return action;
+}
+
+void SecureTextWidget::updateButtonPositions() {
+    QStyleOptionFrame opt;
+    initStyleOptionForText(&opt);
+    QRect innerRect = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
+
+    int left = 0;
+    for (auto *btn : std::as_const(m_leadingButtons)) {
+        QSize sz = btn->sizeHint();
+        btn->resize(sz);
+        int y = innerRect.top() + qRound((innerRect.height() - sz.height()) / 2.0);
+        btn->move(innerRect.left() + left, y);
+        left += sz.width() + m_actionSpacing;
+    }
+
+    int right = 0;
+    for (auto *btn : std::as_const(m_trailingButtons)) {
+        QSize sz = btn->sizeHint();
+        btn->resize(sz);
+        int y = innerRect.top() + qRound((innerRect.height() - sz.height()) / 2.0);
+        btn->move(innerRect.right() - right - sz.width() + 1, y);
+        right += sz.width() + m_actionSpacing;
+    }
+
+    m_buttonMargins = QMargins(left, 0, right, 0);
+
+    //setContentsMargins(m_buttonMargins);
+
+    m_needsRender = true;
+    update();
+}
+void SecureTextWidget::actionEvent(QActionEvent *event) {
+    QFrame::actionEvent(event);
+
+    if (event->type() == QEvent::ActionRemoved) {
+        QAction *action = event->action();
+
+        auto removeBtn = [&](QList<QToolButton*>& list) {
+            for (int i = 0; i < list.size(); ++i) {
+                if (list[i]->defaultAction() == action) {
+                    list[i]->deleteLater();
+                    list.removeAt(i);
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if (removeBtn(m_leadingButtons) || removeBtn(m_trailingButtons)) {
+            updateButtonPositions();
+        }
+    }
+}
+
+void SecureTextWidget::setActionSpacing(int spacing) {
+    if (m_actionSpacing != spacing) {
+        m_actionSpacing = spacing;
+        updateButtonPositions();
+    }
+}
+
+void SecureTextWidget::setTextMargins(int left, int top, int right, int bottom) {
+    setTextMargins(QMargins(left, top, right, bottom));
+}
+
+void SecureTextWidget::setTextMargins(const QMargins &margins) {
+    if (m_textMargins != margins) {
+        m_textMargins = margins;
         m_needsRender = true;
         updateGeometry();
         update();

@@ -31,7 +31,7 @@ VaultView::VaultView(QWidget *parent)
     connect(ui->exportButton, &QPushButton::clicked, this, &VaultView::onExportButtonClicked);
     connect(ui->settingsButton, &QPushButton::clicked, this, &VaultView::onSettingsButtonClicked);
 
-    ui->frame->setPlaceholderText("placeholderText");
+    ui->frame->setPlaceholderText("Search:");
 }
 
 VaultView::~VaultView()
@@ -123,6 +123,13 @@ void VaultView::changeIcons()
         delete action;
     }
 
+    const auto actions1 = ui->frame->actions();
+    for (QAction* action : actions1)
+    {
+        ui->frame->removeAction(action);
+        delete action;
+    }
+
     if (isDarkTheme(this)) {
         ui->searchLine->addAction(QIcon(":/icons/light/icon_search_light"), QLineEdit::LeadingPosition);
         ui->addPasswordButton->setIcon(QIcon(":/icons/light/icon_add_light"));
@@ -131,6 +138,9 @@ void VaultView::changeIcons()
         ui->importButton->setIcon(QIcon(":/icons/light/icon_import_light"));
         ui->exportButton->setIcon(QIcon(":/icons/light/icon_export_light"));
         ui->settingsButton->setIcon(QIcon(":/icons/light/icon_settings_light"));
+
+        ui->frame->addAction(QIcon(":/icons/light/icon_search_light"), QLineEdit::LeadingPosition);
+
     } else {
         ui->searchLine->addAction(QIcon(":/icons/dark/icon_search_dark"), QLineEdit::LeadingPosition);
         ui->addPasswordButton->setIcon(QIcon(":/icons/dark/icon_add_dark"));
@@ -139,6 +149,8 @@ void VaultView::changeIcons()
         ui->importButton->setIcon(QIcon(":/icons/dark/icon_import_dark"));
         ui->exportButton->setIcon(QIcon(":/icons/dark/icon_export_dark"));
         ui->settingsButton->setIcon(QIcon(":/icons/dark/icon_settings_dark"));
+
+        ui->frame->addAction(QIcon(":/icons/dark/icon_search_dark"), QLineEdit::LeadingPosition);
     }
 }
 

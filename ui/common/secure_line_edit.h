@@ -1,6 +1,7 @@
 #pragma once
 #include "secure_text_widget.h"
 
+#include <QLineEdit>
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QFocusEvent>

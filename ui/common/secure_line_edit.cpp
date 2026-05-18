@@ -25,14 +25,18 @@ QSize SecureLineEdit::sizeHint() const {
     int charWidth = std::round(m_renderer.calculateTextWidth(xChar.data(), 1));
     if (charWidth == 0) charWidth = 10;
 
-    int defaultWidth = 15 * charWidth;
+    int defaultTextWidth = 15 * charWidth;
 
     QStyleOptionFrame opt;
     initStyleOptionForText(&opt);
     opt.rect = QRect(0, 0, 1000, 1000);
     QRect cRect = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
 
-    return QSize(defaultWidth + (1000 - cRect.width()) + 2, baseSize.height());
+    int totalWidth = defaultTextWidth + (1000 - cRect.width()) + 2
+                     + m_textMargins.left() + m_textMargins.right()
+                     + m_buttonMargins.left() + m_buttonMargins.right();
+
+    return QSize(totalWidth, baseSize.height());
 }
 
 void SecureLineEdit::ensureCursorVisible() {
@@ -67,6 +71,7 @@ void SecureLineEdit::ensureCursorVisible() {
 
 void SecureLineEdit::resizeEvent(QResizeEvent *event) {
     SecureTextWidget::resizeEvent(event);
+
     ensureCursorVisible();
     update();
 }
