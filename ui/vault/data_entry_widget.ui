@@ -46,18 +46,9 @@
      </property>
      <property name="styleSheet">
       <string notr="true">SecureLabel {
-    background-color: transparent;
-    color: palette(WindowText);
-    
-    /* force border delete */
     border: none;
-    border-width: 0px;
-    border-style: none;
-    outline: none;
-    
-    /* border margins */
-    padding: 0px;
-    margin: 0px;
+    background: transparent;
+	color: palette(window-text);
 }</string>
      </property>
      <property name="frameShape">

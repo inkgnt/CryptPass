@@ -8,8 +8,6 @@
 
 #include "stb_truetype.h"
 
-// TODO remove SecureBuffer and add pointers instead
-
 class SecureFontRenderer {
 public:
     SecureFontRenderer() = default;
@@ -52,11 +50,10 @@ private:
     QByteArray m_fontData;
     stbtt_fontinfo m_fontInfo;
     bool m_fontLoaded = false;
-
     float m_fontSize = 16.0f;
 
     SecureBuffer m_pixelBuffer;
-    size_t m_pixelBufferCapacity = 0;
+
     int m_imageWidth = 0;
     int m_imageHeight = 0;
     SecureBuffer m_glyphBuffer;

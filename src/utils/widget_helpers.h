@@ -19,7 +19,8 @@ static uint32_t nextUtf8Codepoint(const uint8_t*& ptr, const uint8_t* end) {
     else if ((byte0 & 0xF8) == 0xF0) { codepoint = byte0 & 0x07; bytesToRead = 3; }
     else return '?'; // incorrect UTF-8
 
-    while (bytesToRead > 0 && ptr < end) {
+    while (bytesToRead > 0 ) {
+        if (ptr >= end) return '?';
         uint8_t byte = *ptr++;
         if ((byte & 0xC0) != 0x80) return '?';
         codepoint = (codepoint << 6) | (byte & 0x3F);

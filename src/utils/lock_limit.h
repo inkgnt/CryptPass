@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef _WIN32
+
 #include <windows.h>
 
 inline bool increaseWindowsLockLimit(SIZE_T extra_bytes_needed) {

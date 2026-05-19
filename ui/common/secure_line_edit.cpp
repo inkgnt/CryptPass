@@ -5,12 +5,15 @@
 
 SecureLineEdit::SecureLineEdit(QWidget *parent) : SecureTextWidget(parent) {
     setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    //setAttribute(Qt::WA_TranslucentBackground);
-
+    setAttribute(Qt::WA_TranslucentBackground);
+    setForegroundRole(QPalette::Text);
     setFocusPolicy(Qt::StrongFocus);
 
     setCursor(Qt::IBeamCursor);
+
+    m_textBuffer.reserve(64);
 }
+
 QSize SecureLineEdit::minimumSizeHint() const {
     QSize baseSize = SecureTextWidget::minimumSizeHint();
 
@@ -20,9 +23,8 @@ QSize SecureLineEdit::minimumSizeHint() const {
 QSize SecureLineEdit::sizeHint() const {
     QSize baseSize = SecureTextWidget::minimumSizeHint();
 
-    SecureBuffer xChar(1);
-    xChar.data()[0] = 'x';
-    int charWidth = std::round(m_renderer.calculateTextWidth(xChar.data(), 1));
+    static const uint8_t xData[] = {'x'};
+    int charWidth = std::round(m_renderer.calculateTextWidth(xData, 1));
     if (charWidth == 0) charWidth = 10;
 
     int defaultTextWidth = 15 * charWidth;
@@ -75,11 +77,12 @@ void SecureLineEdit::resizeEvent(QResizeEvent *event) {
     ensureCursorVisible();
     update();
 }
+
 bool SecureLineEdit::deleteSelectedText() {
     if (m_selectionStartCharIdx == m_cursorCharIdx) return false;
 
-    int minIdx = qMin(m_selectionStartCharIdx, m_cursorCharIdx);
-    int maxIdx = qMax(m_selectionStartCharIdx, m_cursorCharIdx);
+    int minIdx = std::min(m_selectionStartCharIdx, m_cursorCharIdx);
+    int maxIdx = std::max(m_selectionStartCharIdx, m_cursorCharIdx);
 
     size_t offsetStart = charIndexToByteOffset(minIdx);
     size_t offsetEnd = charIndexToByteOffset(maxIdx);
@@ -88,46 +91,50 @@ bool SecureLineEdit::deleteSelectedText() {
     if (m_textLen > offsetEnd) {
         std::memmove(m_textBuffer.data() + offsetStart, m_textBuffer.data() + offsetEnd, m_textLen - offsetEnd);
     }
-    sodium_memzero(m_textBuffer.data() + m_textLen - bytesToDelete, bytesToDelete);
-    m_textLen -= bytesToDelete;
+    if (m_textBuffer.data())
+        sodium_memzero(m_textBuffer.data() + m_textLen - bytesToDelete, bytesToDelete);
 
-    updateObfuscationBuffer();
+    m_textLen -= bytesToDelete;
 
     m_cursorCharIdx = minIdx;
     m_selectionStartCharIdx = minIdx;
     return true;
 }
 
-void SecureLineEdit::insertText(const SecureBuffer& utf8) {
-    if (utf8.empty()) return;
+void SecureLineEdit::insertText(const uint8_t* ptr, size_t len) {
+    if (!ptr) return;
+
     deleteSelectedText();
 
-    size_t newLen = m_textLen + utf8.size();
-    size_t offset = charIndexToByteOffset(m_cursorCharIdx);
+    size_t bytesToInsert = len;
+    size_t requiredByteSize = m_textLen + bytesToInsert;
 
-    if (newLen > m_textCapacity || m_textBuffer.empty()) {
-        size_t newCapacity = newLen + 32;
-        SecureBuffer newBuffer(newCapacity);
-        sodium_memzero(newBuffer.data(), newCapacity);
+    size_t currentByteOffset = charIndexToByteOffset(m_cursorCharIdx);
 
-        if (offset > 0) std::memcpy(newBuffer.data(), m_textBuffer.data(), offset);
-        std::memcpy(newBuffer.data() + offset, utf8.data(), utf8.size());
-        if (m_textLen > offset) std::memcpy(newBuffer.data() + offset + utf8.size(), m_textBuffer.data() + offset, m_textLen - offset);
-
-        m_textBuffer = std::move(newBuffer);
-        m_textCapacity = newCapacity;
-    } else {
-        if (m_textLen > offset) std::memmove(m_textBuffer.data() + offset + utf8.size(), m_textBuffer.data() + offset, m_textLen - offset);
-        std::memcpy(m_textBuffer.data() + offset, utf8.data(), utf8.size());
+    if (requiredByteSize > m_textBuffer.capacity() || m_textBuffer.empty()) {
+        size_t newCapacity = std::max(requiredByteSize, m_textBuffer.capacity() * 2);
+        m_textBuffer.resize(newCapacity);
     }
-    m_textLen = newLen;
 
-    updateObfuscationBuffer();
+    if (currentByteOffset < m_textLen) {
+        std::memmove(
+            m_textBuffer.data() + currentByteOffset + bytesToInsert,
+            m_textBuffer.data() + currentByteOffset,
+            m_textLen - currentByteOffset
+            );
+    }
+
+    std::memcpy(m_textBuffer.data() + currentByteOffset, ptr, bytesToInsert);
+
+    m_textLen = requiredByteSize;
 
     int insertedChars = 0;
-    const uint8_t* p = utf8.data();
-    const uint8_t* e = p + utf8.size();
-    while (p < e) { nextUtf8Codepoint(p, e); insertedChars++; }
+    const uint8_t* p = ptr;
+    const uint8_t* e = p + len;
+    while (p < e) {
+        nextUtf8Codepoint(p, e);
+        insertedChars++;
+    }
 
     m_cursorCharIdx += insertedChars;
     m_selectionStartCharIdx = m_cursorCharIdx;
@@ -171,7 +178,7 @@ void SecureLineEdit::mouseMoveEvent(QMouseEvent *event) {
 
             int distance = cRect.left() - x;
 
-            m_autoScrollStep = qMin(1 + (distance * distance) / 200, 60 ) ;
+            m_autoScrollStep = std::min(1 + (distance * distance) / 200, 60 ) ;
             if (m_autoScrollTimerId == 0)
                 m_autoScrollTimerId = startTimer(m_autoScrollTimerValue);
         }
@@ -181,7 +188,7 @@ void SecureLineEdit::mouseMoveEvent(QMouseEvent *event) {
 
             int distance = x - cRect.right();
 
-            m_autoScrollStep = qMin(1 + (distance * distance) / 200, 60);
+            m_autoScrollStep = std::min(1 + (distance * distance) / 200, 60);
             if (m_autoScrollTimerId == 0)
                 m_autoScrollTimerId = startTimer(m_autoScrollTimerValue);
         }
@@ -237,22 +244,22 @@ void SecureLineEdit::keyPressEvent(QKeyEvent *event) {
         m_needsRender = true; ensureCursorVisible(); updateGeometry(); update();
     }
     else if (event->key() == Qt::Key_Left) {
-        int target = qMax(0, m_cursorCharIdx - 1);
+        int target = std::max<int>(0, m_cursorCharIdx - 1);
         if (event->modifiers() & Qt::ShiftModifier) {
             m_cursorCharIdx = target;
         } else {
-            if (m_selectionStartCharIdx != m_cursorCharIdx) m_cursorCharIdx = qMin(m_selectionStartCharIdx, m_cursorCharIdx);
+            if (m_selectionStartCharIdx != m_cursorCharIdx) m_cursorCharIdx = std::min(m_selectionStartCharIdx, m_cursorCharIdx);
             else m_cursorCharIdx = target;
             m_selectionStartCharIdx = m_cursorCharIdx;
         }
         m_needsRender = true; ensureCursorVisible(); update();
     }
     else if (event->key() == Qt::Key_Right) {
-        int target = qMin(totalChars(), m_cursorCharIdx + 1);
+        int target = std::min<int>(static_cast<int>(totalChars()), m_cursorCharIdx + 1);
         if (event->modifiers() & Qt::ShiftModifier) {
             m_cursorCharIdx = target;
         } else {
-            if (m_selectionStartCharIdx != m_cursorCharIdx) m_cursorCharIdx = qMax(m_selectionStartCharIdx, m_cursorCharIdx);
+            if (m_selectionStartCharIdx != m_cursorCharIdx) m_cursorCharIdx = std::max(m_selectionStartCharIdx, m_cursorCharIdx);
             else m_cursorCharIdx = target;
             m_selectionStartCharIdx = m_cursorCharIdx;
         }
@@ -262,9 +269,7 @@ void SecureLineEdit::keyPressEvent(QKeyEvent *event) {
         const QString& t = event->text();
         if (t.length() > 0 && t[0].isPrint()) {
             QByteArray tempUtf8 = t.toUtf8();
-            SecureBuffer utf8(tempUtf8.size());
-            std::memcpy(utf8.data(), tempUtf8.constData(), tempUtf8.size());
-            insertText(utf8);
+            insertText(reinterpret_cast<const uint8_t*>(tempUtf8.data()), tempUtf8.size());
 
             sodium_memzero(tempUtf8.data(), tempUtf8.size());
         }
@@ -311,9 +316,9 @@ void SecureLineEdit::timerEvent(QTimerEvent *event) {
         int oldIdx = m_cursorCharIdx;
 
         if (m_autoScrollDirection < 0) {
-            m_cursorCharIdx = qMax(0, m_cursorCharIdx - m_autoScrollStep);
+            m_cursorCharIdx = std::max<int>(0, m_cursorCharIdx - m_autoScrollStep);
         } else {
-            m_cursorCharIdx = qMin(totalChars(), m_cursorCharIdx + m_autoScrollStep);
+            m_cursorCharIdx = std::min<int>(static_cast<int>(totalChars()), m_cursorCharIdx + m_autoScrollStep);
         }
 
         if (oldIdx != m_cursorCharIdx) {

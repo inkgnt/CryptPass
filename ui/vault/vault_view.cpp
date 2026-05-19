@@ -77,7 +77,10 @@ void VaultView::onLockButtonClicked()
 
 void VaultView::onImportButtonClicked()
 {
-    //
+    if (ui->frame->isObfuscated())
+        ui->frame->setObfuscated(false);
+    else
+        ui->frame->setObfuscated(true);
 }
 
 void VaultView::onExportButtonClicked()

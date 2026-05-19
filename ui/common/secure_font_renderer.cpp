@@ -35,9 +35,11 @@ float SecureFontRenderer::calculateTextWidth(const uint8_t* textData, size_t tex
     if (!m_fontLoaded || textLen == 0) return 0.0f;
     float scale = stbtt_ScaleForMappingEmToPixels(&m_fontInfo, m_fontSize);
     float width = 0.0f;
-    uint32_t prevCp = 0;
+
     const uint8_t* ptr = textData;
     const uint8_t* end = ptr + textLen;
+
+    uint32_t prevCp = 0;
 
     while (ptr < end) {
         uint32_t cp = nextUtf8Codepoint(ptr, end);
@@ -123,24 +125,34 @@ void SecureFontRenderer::renderText(
     float& outTextStartX, float& outTextStartY)
 {
     if (!m_fontLoaded || cRect.isEmpty() || textLen == 0) {
-        m_pixelBuffer = SecureBuffer();
-        m_imageWidth = 0; m_imageHeight = 0;
-        outTextStartX = 0; outTextStartY = 0;
+
+        if (m_pixelBuffer.data())
+            sodium_memzero(m_pixelBuffer.data(), m_pixelBuffer.capacity());
+
+        m_imageWidth = 0;
+        m_imageHeight = 0;
+
+        outTextStartX = 0;
+        outTextStartY = 0;
         return;
     }
 
     m_imageWidth = qCeil(cRect.width() * dpr);
     m_imageHeight = qCeil(cRect.height() * dpr);
+
     float physScale = stbtt_ScaleForMappingEmToPixels(&m_fontInfo, m_fontSize * dpr);
 
     float physTextWidth = 0.0f;
     uint32_t prevCpWidth = 0;
+
     const uint8_t* wPtr = textData;
     const uint8_t* wEnd = wPtr + textLen;
+
     while (wPtr < wEnd) {
         uint32_t cp = nextUtf8Codepoint(wPtr, wEnd);
 
-        if (prevCpWidth != 0) physTextWidth += stbtt_GetCodepointKernAdvance(&m_fontInfo, prevCpWidth, cp) * physScale;
+        if (prevCpWidth != 0)
+            physTextWidth += stbtt_GetCodepointKernAdvance(&m_fontInfo, prevCpWidth, cp) * physScale;
 
         int aw, lsb;
         stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &aw, &lsb);
@@ -172,26 +184,22 @@ void SecureFontRenderer::renderText(
     outTextStartX = cursorX / dpr;
     outTextStartY = (cursorY - physAscent) / dpr;
 
-    size_t reqSize = m_imageWidth * m_imageHeight * 4;
-    if (reqSize > m_pixelBufferCapacity || m_pixelBuffer.empty()) {
-        m_pixelBufferCapacity = reqSize + 1024;
-        m_pixelBuffer = SecureBuffer(m_pixelBufferCapacity);
-    }
-    sodium_memzero(m_pixelBuffer.data(), reqSize);
+    size_t reqSize = static_cast<size_t>(m_imageWidth) * static_cast<size_t>(m_imageHeight) * 4;
+
+    m_pixelBuffer.resize(reqSize);
+
+    if (m_pixelBuffer.data())
+        sodium_memzero(m_pixelBuffer.data(), m_pixelBuffer.capacity());
 
     uint32_t* destPixels = reinterpret_cast<uint32_t*>(m_pixelBuffer.data());
-    bool hasSelection = (selMin != selMax);
+    const bool hasSelection = (selMin != selMax);
 
-    uint32_t nR = normalColor.red(), nG = normalColor.green(), nB = normalColor.blue();
-    uint32_t hR = highlightColor.red(), hG = highlightColor.green(), hB = highlightColor.blue();
-
-    int boxX0, boxY0, boxX1, boxY1;
-    stbtt_GetFontBoundingBox(&m_fontInfo, &boxX0, &boxY0, &boxX1, &boxY1);
-    size_t maxGlyphBytes = std::ceil((boxX1 - boxX0) * physScale) * std::ceil((boxY1 - boxY0) * physScale);
-    if (m_glyphBuffer.size() < maxGlyphBytes) m_glyphBuffer = SecureBuffer(maxGlyphBytes);
+    const uint32_t nR = normalColor.red(), nG = normalColor.green(), nB = normalColor.blue();
+    const uint32_t hR = highlightColor.red(), hG = highlightColor.green(), hB = highlightColor.blue();
 
     const uint8_t* ptr = textData;
     const uint8_t* end = ptr + textLen;
+
     int charIdx = 0;
     uint32_t prevCpRender = 0;
 
@@ -218,54 +226,53 @@ void SecureFontRenderer::renderText(
         int glyphHeight = y1 - y0;
 
         if (glyphWidth > 0 && glyphHeight > 0) {
-            if (static_cast<size_t>(glyphWidth * glyphHeight) <= m_glyphBuffer.size()) {
-                stbtt_MakeCodepointBitmapSubpixel(&m_fontInfo, m_glyphBuffer.data(), glyphWidth, glyphHeight, glyphWidth, physScale, physScale, x_shift, y_shift, cp);
+            m_glyphBuffer.resize(static_cast<size_t>(glyphWidth) * static_cast<size_t>(glyphHeight));
+            stbtt_MakeCodepointBitmapSubpixel(&m_fontInfo, m_glyphBuffer.data(), glyphWidth, glyphHeight, glyphWidth, physScale, physScale, x_shift, y_shift, cp);
 
-                int baseDrawX = static_cast<int>(std::floor(cursorX)) + x0;
-                int baseDrawY = static_cast<int>(std::floor(cursorY)) + y0;
-                int startX = qMax(0, -baseDrawX);
-                int startY = qMax(0, -baseDrawY);
-                int endX = qMin(glyphWidth, m_imageWidth - baseDrawX);
-                int endY = qMin(glyphHeight, m_imageHeight - baseDrawY);
+            int baseDrawX = static_cast<int>(std::floor(cursorX)) + x0;
+            int baseDrawY = static_cast<int>(std::floor(cursorY)) + y0;
 
+            int startY = std::max(0, -baseDrawY);
+            int endY = std::min(glyphHeight, m_imageHeight - baseDrawY);
+            int startX = std::max(0, -baseDrawX);
+            int endX = std::min(glyphWidth, m_imageWidth - baseDrawX);
 
-                for (int y = startY; y < endY; ++y) {
-                    const uint8_t* alphaRow = m_glyphBuffer.data() + (y * glyphWidth);
-                    uint32_t* destRow = destPixels + ((baseDrawY + y) * m_imageWidth);
-                    for (int x = startX; x < endX; ++x) {
-                        uint8_t alpha = alphaRow[x];
-                        if (alpha > 0) {
+            for (int y = startY; y < endY; ++y) {
+                const uint8_t* alphaRow = m_glyphBuffer.data() + (y * glyphWidth);
+                uint32_t* destRow = destPixels + ((baseDrawY + y) * m_imageWidth);
 
-                            uint32_t bg = destRow[baseDrawX + x];
-                            if (bg == 0) {
-                                uint32_t r = (rColor * alpha) / 255;
-                                uint32_t g = (gColor * alpha) / 255;
-                                uint32_t b = (bColor * alpha) / 255;
-                                destRow[baseDrawX + x] = (alpha << 24) | (r << 16) | (g << 8) | b;
-                            } else {
-                                uint32_t bgA = (bg >> 24) & 0xFF;
-                                uint32_t bgR = (bg >> 16) & 0xFF;
-                                uint32_t bgG = (bg >> 8) & 0xFF;
-                                uint32_t bgB = bg & 0xFF;
+                for (int x = startX; x < endX; ++x) {
+                    uint8_t alpha = alphaRow[x];
+                    if (alpha > 0) {
 
-                                uint32_t invAlpha = 255 - alpha;
-                                uint32_t r = ((rColor * alpha) + bgR * invAlpha) / 255;
-                                uint32_t g = ((gColor * alpha) + bgG * invAlpha) / 255;
-                                uint32_t b = ((bColor * alpha) + bgB * invAlpha) / 255;
-                                uint32_t a = alpha + (bgA * invAlpha) / 255;
+                        uint32_t bg = destRow[baseDrawX + x];
+                        if (bg == 0) {
+                            uint32_t r = (rColor * alpha + 127) / 255;
+                            uint32_t g = (gColor * alpha + 127) / 255;
+                            uint32_t b = (bColor * alpha + 127) / 255;
+                            destRow[baseDrawX + x] = (alpha << 24) | (r << 16) | (g << 8) | b;
+                        } else {
+                            uint32_t bgA = (bg >> 24 ) & 0xFF;
+                            uint32_t bgR = (bg >> 16) & 0xFF;
+                            uint32_t bgG = (bg >> 8) & 0xFF;
+                            uint32_t bgB = bg & 0xFF;
 
-                                destRow[baseDrawX + x] = (a << 24) | (r << 16) | (g << 8) | b;
-                            }
+                            uint32_t invAlpha = 255 - alpha;
+                            uint32_t r = ((rColor * alpha) + bgR * invAlpha + 127) / 255;
+                            uint32_t g = ((gColor * alpha) + bgG * invAlpha + 127) / 255;
+                            uint32_t b = ((bColor * alpha) + bgB * invAlpha + 127) / 255;
+                            uint32_t a = alpha + (bgA * invAlpha + 127) / 255;
+
+                            destRow[baseDrawX + x] = (a << 24) | (r << 16) | (g << 8) | b;
                         }
                     }
                 }
             }
         }
 
-        int advanceWidth, leftSideBearing;
-        stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &advanceWidth, &leftSideBearing);
+        int advanceWidth, lsb;
+        stbtt_GetCodepointHMetrics(&m_fontInfo, cp, &advanceWidth, &lsb);
         cursorX += advanceWidth * physScale;
-
         prevCpRender = cp;
         charIdx++;
     }

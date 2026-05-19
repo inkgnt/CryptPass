@@ -13,7 +13,7 @@ public:
     explicit SecureLineEdit(QWidget *parent = nullptr);
     ~SecureLineEdit() override = default;
 
-    void insertText(const SecureBuffer& utf8);
+    void insertText(const uint8_t* ptr, size_t len);
     bool deleteSelectedText();
 
     QSize minimumSizeHint() const override;

@@ -15,7 +15,9 @@ class SecureTextWidget : public QFrame {
 
 public:
     explicit SecureTextWidget(QWidget *parent = nullptr);
-    virtual ~SecureTextWidget() = default;
+    ~SecureTextWidget() override;
+
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
     void clear();
     SecureBuffer getSecureText() const;
@@ -52,16 +54,13 @@ protected:
     void changeEvent(QEvent *event) override;
 
     QRect textRect() const;
-    int totalChars() const;
+    size_t totalChars() const;
     size_t charIndexToByteOffset(int targetIdx) const;
 
-
     const uint8_t* getRenderData(size_t& outLen) const;
-    void updateObfuscationBuffer();
 
     SecureBuffer m_textBuffer;
     size_t m_textLen = 0;
-    size_t m_textCapacity = 0;
 
     QString m_placeholderText;
 
@@ -72,9 +71,7 @@ protected:
 
     Qt::Alignment m_alignment = Qt::AlignLeft | Qt::AlignVCenter;
 
-    bool m_obfuscated = true;
-    SecureBuffer m_obfuscationBuffer;
-    size_t m_obfuscationCapacity = 0;
+    bool m_obfuscated = false;
 
     float m_textStartX = 0;
     float m_textStartY = 0;

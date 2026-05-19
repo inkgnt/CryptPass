@@ -1,6 +1,8 @@
 #include "secure_text_widget.h"
 #include "utils/widget_helpers.h"
 
+#include <QApplication>
+#include <qtimer.h>
 #include <sodium.h>
 
 #include <QPainter>
@@ -9,17 +11,75 @@
 #include <QActionEvent>
 #include <QEvent>
 
+namespace {
+const uint8_t* getStaticDotsData(size_t charCount, size_t& outByteLen) {
+    static const size_t MAX_DOTS = 1024;
+    static const std::vector<uint8_t> dotsBuffer = []() {
+        std::vector<uint8_t> buffer;
+        buffer.reserve(MAX_DOTS * 3);
+        for (size_t i = 0; i < MAX_DOTS; ++i) {
+            buffer.push_back(0xE2);
+            buffer.push_back(0x80);
+            buffer.push_back(0xA2);
+        }
+        return buffer;
+    }();
+
+    size_t count = std::min<size_t>(charCount, MAX_DOTS);
+    outByteLen = count * 3;
+    return dotsBuffer.data();
+}
+}
+
 SecureTextWidget::SecureTextWidget(QWidget *parent) : QFrame(parent) {
-    setAttribute(Qt::WA_StyledBackground, true);
-    setFrameStyle(QFrame::NoFrame | QFrame::Plain);
 
     m_renderer.loadFont(m_fontPath);
     m_renderer.setFontSize(m_fontSize);
+
+    qApp->installEventFilter(this);
+}
+
+SecureTextWidget::~SecureTextWidget() {
+    if (qApp) {
+        qApp->removeEventFilter(this);
+    }
+}
+
+
+// for tomorrow me: rembeber of this bug, I have to filter main app events, because QSS blocks
+// it when QSS is present in widget object
+bool SecureTextWidget::eventFilter(QObject *watched, QEvent *event) {
+    if (watched == qApp) {
+        if (event->type() == QEvent::ApplicationPaletteChange ||
+            event->type() == QEvent::ThemeChange)
+        {
+            m_needsRender = true;
+            update();
+        }
+    }
+    return QFrame::eventFilter(watched, event);
+}
+
+void SecureTextWidget::changeEvent(QEvent *event) {
+    QFrame::changeEvent(event);
+
+    if (event->type() == QEvent::FontChange) {
+        m_renderer.setFontSize(m_fontSize);
+    }
+
+    if (event->type() == QEvent::PaletteChange ||
+        event->type() == QEvent::ApplicationPaletteChange ||
+        event->type() == QEvent::StyleChange)
+    {
+        m_needsRender = true;
+        updateGeometry();
+        update();
+    }
 }
 
 void SecureTextWidget::clear() {
-    if (m_textCapacity > 0)
-        sodium_memzero(m_textBuffer.data(), m_textCapacity);
+    if (m_textBuffer.data())
+        sodium_memzero(m_textBuffer.data(), m_textBuffer.capacity());
 
     m_textLen = 0;
     m_cursorCharIdx = 0;
@@ -53,9 +113,11 @@ SecureBuffer SecureTextWidget::getSecureText() const {
 void SecureTextWidget::setPlaceholderText(const QString& placeholder) {
     if (m_placeholderText != placeholder) { m_placeholderText = placeholder; update(); }
 }
+
 void SecureTextWidget::setAlignment(Qt::Alignment align) {
     m_alignment = align; m_needsRender = true; update();
 }
+
 void SecureTextWidget::setObfuscated(bool obfuscate) {
     m_obfuscated = obfuscate; m_needsRender = true; updateGeometry(); update();
 }
@@ -71,19 +133,21 @@ QRect SecureTextWidget::textRect() const {
         r = rect();
     }
 
-
     r = r.marginsRemoved(contentsMargins());
     r = r.marginsRemoved(m_textMargins);
     r = r.marginsRemoved(m_buttonMargins);
 
     return r;
-
 }
-int SecureTextWidget::totalChars() const {
-    int count = 0;
+
+size_t SecureTextWidget::totalChars() const {
+    size_t count = 0;
     const uint8_t* ptr = m_textBuffer.data();
     const uint8_t* end = ptr + m_textLen;
-    while(ptr < end) { nextUtf8Codepoint(ptr, end); count++; }
+    while(ptr < end) {
+        nextUtf8Codepoint(ptr, end);
+        count++;
+    }
     return count;
 }
 
@@ -100,31 +164,11 @@ const uint8_t* SecureTextWidget::getRenderData(size_t& outLen) const {
         outLen = m_textLen;
         return m_textBuffer.data();
     } else {
-        outLen = totalChars() * 3;
-        return m_obfuscationBuffer.data();
+        return getStaticDotsData(totalChars(), outLen);
     }
 }
 
-void SecureTextWidget::updateObfuscationBuffer() {
-    if (!m_obfuscated) return;
-
-    int count = totalChars();
-    size_t reqLen = count * 3;
-
-
-    if (reqLen > m_obfuscationCapacity || m_obfuscationBuffer.empty()) {
-        m_obfuscationCapacity = reqLen + 64;
-        m_obfuscationBuffer = SecureBuffer(m_obfuscationCapacity);
-    }
-
-    uint8_t* ptr = m_obfuscationBuffer.data();
-    for (int i = 0; i < count; ++i) {
-        ptr[i * 3 + 0] = 0xE2;
-        ptr[i * 3 + 1] = 0x80;
-        ptr[i * 3 + 2] = 0xA2;
-    }
-}
-
+QSize SecureTextWidget::sizeHint() const { return minimumSizeHint(); }
 
 QSize SecureTextWidget::minimumSizeHint() const {
     if (!m_renderer.isLoaded())
@@ -146,10 +190,10 @@ QSize SecureTextWidget::minimumSizeHint() const {
     int textHeight = std::round(metrics.textHeight);
 
     int maxButtonHeight = 0;
-    for (auto *btn : std::as_const(m_leadingButtons)) maxButtonHeight = qMax(maxButtonHeight, btn->sizeHint().height());
-    for (auto *btn : std::as_const(m_trailingButtons)) maxButtonHeight = qMax(maxButtonHeight, btn->sizeHint().height());
+    for (auto *btn : std::as_const(m_leadingButtons)) maxButtonHeight = std::max(maxButtonHeight, btn->sizeHint().height());
+    for (auto *btn : std::as_const(m_trailingButtons)) maxButtonHeight = std::max(maxButtonHeight, btn->sizeHint().height());
 
-    int contentHeight = qMax(textHeight, maxButtonHeight);
+    int contentHeight = std::max(textHeight, maxButtonHeight);
 
     int totalWidth = static_cast<int>(textWidth)
                      + m_textMargins.left() + m_textMargins.right()
@@ -175,7 +219,6 @@ QSize SecureTextWidget::minimumSizeHint() const {
         };
     }
 }
-QSize SecureTextWidget::sizeHint() const { return minimumSizeHint(); }
 
 void SecureTextWidget::paintEvent(QPaintEvent *event) {
     QStyleOptionFrame opt;
@@ -205,10 +248,16 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
     size_t renderLen = 0;
     const uint8_t* renderData = getRenderData(renderLen);
 
-    int selMin = qMin(m_selectionStartCharIdx, m_cursorCharIdx);
-    int selMax = qMax(m_selectionStartCharIdx, m_cursorCharIdx);
+    int selMin = std::min(m_selectionStartCharIdx, m_cursorCharIdx);
+    int selMax = std::max(m_selectionStartCharIdx, m_cursorCharIdx);
+
 
     if (m_needsRender) {
+        this->style()->unpolish(this);
+        this->style()->polish(this);
+
+        qDebug() << "current Role:" << foregroundRole() << "color:" << palette().color(foregroundRole()).name() << "palette Color:" << palette().color(foregroundRole());
+
         m_renderer.renderText(
             renderData, renderLen, cRect, devicePixelRatioF(), m_alignment,
             m_scrollOffset,
@@ -220,7 +269,6 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
 
     float globalStartX = cRect.left() + m_textStartX;
     float globalStartY = cRect.top() + m_textStartY;
-
 
     if (renderLen == 0) {
         if (m_alignment & Qt::AlignVCenter) globalStartY = cRect.top() + (cRect.height() - metrics.textHeight) / 2.0f;
@@ -274,22 +322,6 @@ void SecureTextWidget::resizeEvent(QResizeEvent *event) {
     update();
 }
 
-void SecureTextWidget::changeEvent(QEvent *event) {
-    QFrame::changeEvent(event);
-
-    if (event->type() == QEvent::PaletteChange || event->type() == QEvent::StyleChange ||
-        event->type() == QEvent::FontChange
-        )
-    {
-        m_renderer.setFontSize(m_fontSize);
-
-        m_needsRender = true;
-        updateGeometry();
-        update();
-    }
-}
-
-
 QAction* SecureTextWidget::addAction(const QIcon &icon, QLineEdit::ActionPosition position) {
     QAction *action = new QAction(icon, "", this);
     QFrame::addAction(action);
@@ -336,11 +368,10 @@ void SecureTextWidget::updateButtonPositions() {
 
     m_buttonMargins = QMargins(left, 0, right, 0);
 
-    //setContentsMargins(m_buttonMargins);
-
     m_needsRender = true;
     update();
 }
+
 void SecureTextWidget::actionEvent(QActionEvent *event) {
     QFrame::actionEvent(event);
 

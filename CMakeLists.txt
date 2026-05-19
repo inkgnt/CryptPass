@@ -49,6 +49,7 @@ set(UI_SOURCES
     ui/common/secure_font_renderer.cpp
     ui/common/secure_label.cpp
     ui/common/secure_line_edit.cpp
+    ui/common/secure_text_widget.cpp
 )
 
 # ==========================================================
@@ -61,7 +62,7 @@ add_executable(${PROJECT_NAME}
     ${UI_SOURCES}
 
     resources/resource.qrc
-    ui/common/secure_text_widget.h ui/common/secure_text_widget.cpp
+
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -72,31 +73,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # ==========================================================
 # Linking
 # ==========================================================
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        /GS
-        /sdl
-        /guard:cf
-    )
-    target_link_options(${PROJECT_NAME} PRIVATE
-        /NXCOMPAT
-        /GUARD:CF
-        /CETCOMPAT
-    )
-elseif(UNIX)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        -fstack-protector-strong
-        $<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>
-    )
-
-    if(NOT APPLE)
-        target_link_options(${PROJECT_NAME} PRIVATE
-            -Wl,-z,relro,-z,now
-            -Wl,--no-execstack
-        )
-    endif()
-endif()
-
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>)
@@ -129,14 +105,35 @@ if (WIN32)
         WIN32_EXECUTABLE TRUE
     )
 
+    target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
+
+
+    if(MSVC)
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            /GS
+            /sdl
+            /guard:cf
+        )
+        target_link_options(${PROJECT_NAME} PRIVATE
+            /NXCOMPAT
+            /GUARD:CF
+            /CETCOMPAT
+        )
+    endif()
+
+
 elseif(UNIX)
 
-
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -fstack-protector-strong
+        $<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>
+    )
 
     if(NOT APPLE)
-
-
-
+        target_link_options(${PROJECT_NAME} PRIVATE
+            -Wl,-z,relro,-z,now
+            -Wl,--no-execstack
+        )
     endif()
 
 endif()
