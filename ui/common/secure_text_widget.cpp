@@ -42,17 +42,25 @@ SecureTextWidget::SecureTextWidget(QWidget *parent) : QFrame(parent) {
 SecureTextWidget::~SecureTextWidget() {
     if (qApp) {
         qApp->removeEventFilter(this);
+        qDebug() << "filter removed";
+
     }
 }
 
 
-// for tomorrow me: rembeber of this bug, I have to filter main app events, because QSS blocks
-// it when QSS is present in widget object
+/* for tomorrow me: rembeber of this bug,
+ * I have to filter main app events, when QSS is present in widget object
+ * because (QSS itself filters it? not sure yet and as a result widget palette
+ * is copied in QSS internals i guess and remain unchanged until you unpolish polish it wtf)
+*/
 bool SecureTextWidget::eventFilter(QObject *watched, QEvent *event) {
     if (watched == qApp) {
         if (event->type() == QEvent::ApplicationPaletteChange ||
             event->type() == QEvent::ThemeChange)
         {
+            this->style()->unpolish(this);
+            this->style()->polish(this);
+
             m_needsRender = true;
             update();
         }
@@ -121,7 +129,7 @@ void SecureTextWidget::setAlignment(Qt::Alignment align) {
 void SecureTextWidget::setObfuscated(bool obfuscate) {
     m_obfuscated = obfuscate; m_needsRender = true; updateGeometry(); update();
 }
-
+/*
 QRect SecureTextWidget::textRect() const {
     QStyleOptionFrame opt;
     initStyleOptionForText(&opt);
@@ -131,11 +139,21 @@ QRect SecureTextWidget::textRect() const {
         r = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
     } else {
         r = rect();
+        r = r.marginsRemoved(contentsMargins());
     }
 
-    r = r.marginsRemoved(contentsMargins());
-    r = r.marginsRemoved(m_textMargins);
     r = r.marginsRemoved(m_buttonMargins);
+    r = r.marginsRemoved(m_textMargins);
+
+    return r;
+}*/
+
+QRect SecureTextWidget::textRect() const {
+    QRect r = contentsRect();
+
+    r = r.marginsRemoved(m_buttonMargins);
+
+    r = r.marginsRemoved(m_textMargins);
 
     return r;
 }
@@ -169,7 +187,37 @@ const uint8_t* SecureTextWidget::getRenderData(size_t& outLen) const {
 }
 
 QSize SecureTextWidget::sizeHint() const { return minimumSizeHint(); }
+QSize SecureTextWidget::minimumSizeHint() const {
+    if (!m_renderer.isLoaded()) return {0, 0};
 
+    float textWidth = 0.0f;
+    if (m_textLen > 0) {
+        size_t renderLen = 0;
+        const uint8_t* renderData = getRenderData(renderLen);
+        textWidth = m_renderer.calculateTextWidth(renderData, renderLen);
+    } else {
+        textWidth = fontMetrics().horizontalAdvance(m_placeholderText);
+    }
+
+    int textHeight = std::round(m_renderer.getMetrics().textHeight);
+    int maxBtnH = 0;
+    for (auto *b : m_leadingButtons) maxBtnH = std::max(maxBtnH, b->sizeHint().height());
+    for (auto *b : m_trailingButtons) maxBtnH = std::max(maxBtnH, b->sizeHint().height());
+
+    int contentH = std::max(textHeight, maxBtnH);
+
+    int totalW = static_cast<int>(textWidth) + 2
+                 + m_textMargins.left() + m_textMargins.right()
+                 + m_buttonMargins.left() + m_buttonMargins.right();
+
+    int totalH = contentH + m_textMargins.top() + m_textMargins.bottom();
+
+    QMargins cm = contentsMargins();
+    return QSize(totalW + cm.left() + cm.right(),
+                 totalH + cm.top() + cm.bottom());
+}
+
+/*
 QSize SecureTextWidget::minimumSizeHint() const {
     if (!m_renderer.isLoaded())
         return {0, 0};
@@ -219,7 +267,7 @@ QSize SecureTextWidget::minimumSizeHint() const {
         };
     }
 }
-
+*/
 void SecureTextWidget::paintEvent(QPaintEvent *event) {
     QStyleOptionFrame opt;
     initStyleOptionForText(&opt);
@@ -253,8 +301,8 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
 
 
     if (m_needsRender) {
-        this->style()->unpolish(this);
-        this->style()->polish(this);
+        //this->style()->unpolish(this);
+        //this->style()->polish(this);
 
         qDebug() << "current Role:" << foregroundRole() << "color:" << palette().color(foregroundRole()).name() << "palette Color:" << palette().color(foregroundRole());
 
@@ -330,7 +378,7 @@ QAction* SecureTextWidget::addAction(const QIcon &icon, QLineEdit::ActionPositio
     button->setDefaultAction(action);
     button->setCursor(Qt::ArrowCursor);
     button->setFocusPolicy(Qt::NoFocus);
-    button->setStyleSheet("QToolButton { border: none; background: transparent; }");
+    button->setStyleSheet("QToolButton { border: none; padding: 2px; background: transparent; }");
 
     if (position == QLineEdit::LeadingPosition) {
         m_leadingButtons.append(button);
@@ -342,7 +390,7 @@ QAction* SecureTextWidget::addAction(const QIcon &icon, QLineEdit::ActionPositio
     updateButtonPositions();
     return action;
 }
-
+/*
 void SecureTextWidget::updateButtonPositions() {
     QStyleOptionFrame opt;
     initStyleOptionForText(&opt);
@@ -368,6 +416,33 @@ void SecureTextWidget::updateButtonPositions() {
 
     m_buttonMargins = QMargins(left, 0, right, 0);
 
+    m_needsRender = true;
+    update();
+}*/
+
+
+void SecureTextWidget::updateButtonPositions() {
+    QRect cr = contentsRect();
+
+    int left = 0;
+    for (auto *btn : std::as_const(m_leadingButtons)) {
+        QSize sz = btn->sizeHint();
+        btn->resize(sz);
+        int y = cr.top() + (cr.height() - sz.height()) / 2;
+        btn->move(cr.left() + left, y);
+        left += sz.width() + m_actionSpacing;
+    }
+
+    int right = 0;
+    for (auto *btn : std::as_const(m_trailingButtons)) {
+        QSize sz = btn->sizeHint();
+        btn->resize(sz);
+        int y = cr.top() + (cr.height() - sz.height()) / 2;
+        btn->move(cr.right() - right - sz.width() + 1, y);
+        right += sz.width() + m_actionSpacing;
+    }
+
+    m_buttonMargins = QMargins(left, 0, right, 0);
     m_needsRender = true;
     update();
 }

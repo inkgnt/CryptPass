@@ -46,9 +46,12 @@
      </property>
      <property name="styleSheet">
       <string notr="true">SecureLabel {
-    border: none;
-    background: transparent;
-	color: palette(window-text);
+   /* border: none;
+    background: transparent;*/
+	margin-top: 50px;
+	margin-right: 50px;
+	margin-bottom: 50px;
+	margin-left: 50px;
 }</string>
      </property>
      <property name="frameShape">

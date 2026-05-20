@@ -15,30 +15,30 @@ SecureLineEdit::SecureLineEdit(QWidget *parent) : SecureTextWidget(parent) {
 }
 
 QSize SecureLineEdit::minimumSizeHint() const {
-    QSize baseSize = SecureTextWidget::minimumSizeHint();
+    QSize baseS = SecureTextWidget::minimumSizeHint();
 
-    return QSize(50 + contentsMargins().left() + contentsMargins().right(), baseSize.height());
+    float textWidth = 0.0f;
+    if (m_textLen > 0) {
+        size_t len;
+        const uint8_t* data = getRenderData(len);
+        textWidth = m_renderer.calculateTextWidth(data, len);
+    } else {
+        textWidth = fontMetrics().horizontalAdvance(placeholderText());
+    }
+
+    int decorationsWidth = baseS.width() - static_cast<int>(textWidth);
+
+    return QSize(decorationsWidth + 10, baseS.height());
 }
 
 QSize SecureLineEdit::sizeHint() const {
-    QSize baseSize = SecureTextWidget::minimumSizeHint();
+    QSize minS = minimumSizeHint();
 
-    static const uint8_t xData[] = {'x'};
-    int charWidth = std::round(m_renderer.calculateTextWidth(xData, 1));
-    if (charWidth == 0) charWidth = 10;
+    int typicalWidth = fontMetrics().horizontalAdvance('x') * 15;
 
-    int defaultTextWidth = 15 * charWidth;
+    int finalWidth = (minS.width() - 10) + typicalWidth;
 
-    QStyleOptionFrame opt;
-    initStyleOptionForText(&opt);
-    opt.rect = QRect(0, 0, 1000, 1000);
-    QRect cRect = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
-
-    int totalWidth = defaultTextWidth + (1000 - cRect.width()) + 2
-                     + m_textMargins.left() + m_textMargins.right()
-                     + m_buttonMargins.left() + m_buttonMargins.right();
-
-    return QSize(totalWidth, baseSize.height());
+    return QSize(finalWidth, minS.height());
 }
 
 void SecureLineEdit::ensureCursorVisible() {

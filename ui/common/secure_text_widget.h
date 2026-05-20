@@ -12,6 +12,7 @@ class SecureTextWidget : public QFrame {
     Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText)
     Q_PROPERTY(Qt::Alignment alignment READ alignment WRITE setAlignment)
     Q_PROPERTY(bool obfuscated READ isObfuscated WRITE setObfuscated)
+    Q_PROPERTY(QMargins textMargins READ textMargins WRITE setTextMargins)
 
 public:
     explicit SecureTextWidget(QWidget *parent = nullptr);
@@ -86,9 +87,14 @@ protected:
 
     int m_actionSpacing = 0;
     QMargins m_textMargins;
-    QMargins m_buttonMargins;
+
 
 private:
+    /* private because it is techincal margins,
+     * if you want button margins you should set it through the qss like that:
+     * QToolButton {    padding: 2px; margin-top: 2px; etc.}
+     */
+    QMargins m_buttonMargins;
 
     void updateButtonPositions();
     QList<QToolButton*> m_leadingButtons;
