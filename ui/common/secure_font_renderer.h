@@ -45,10 +45,10 @@ public:
     const SecureBuffer& pixelBuffer() const { return m_pixelBuffer; }
     int imageWidth() const { return m_imageWidth; }
     int imageHeight() const { return m_imageHeight; }
+    stbtt_fontinfo m_fontInfo;
+    QByteArray m_fontData;
 
 private:
-    QByteArray m_fontData;
-    stbtt_fontinfo m_fontInfo;
     bool m_fontLoaded = false;
     float m_fontSize = 16.0f;
 

@@ -11,8 +11,7 @@
 #include <QActionEvent>
 #include <QEvent>
 
-namespace {
-const uint8_t* getStaticDotsData(size_t charCount, size_t& outByteLen) {
+const uint8_t* SecureTextWidget::getStaticDotsData(size_t charCount, size_t& outByteLen) {
     static const size_t MAX_DOTS = 1024;
     static const std::vector<uint8_t> dotsBuffer = []() {
         std::vector<uint8_t> buffer;
@@ -28,7 +27,6 @@ const uint8_t* getStaticDotsData(size_t charCount, size_t& outByteLen) {
     size_t count = std::min<size_t>(charCount, MAX_DOTS);
     outByteLen = count * 3;
     return dotsBuffer.data();
-}
 }
 
 SecureTextWidget::SecureTextWidget(QWidget *parent) : QFrame(parent) {
@@ -46,7 +44,6 @@ SecureTextWidget::~SecureTextWidget() {
 
     }
 }
-
 
 /* for tomorrow me: rembeber of this bug,
  * I have to filter main app events, when QSS is present in widget object
@@ -87,34 +84,22 @@ void SecureTextWidget::changeEvent(QEvent *event) {
 
 void SecureTextWidget::clear() {
     if (m_textBuffer.data())
-        sodium_memzero(m_textBuffer.data(), m_textBuffer.capacity());
+        m_textBuffer.resize(0); // clears memory if new size < current size
 
-    m_textLen = 0;
     m_cursorCharIdx = 0;
     m_selectionStartCharIdx = 0;
+
     m_needsRender = true;
     updateGeometry();
     update();
 }
 
-void SecureTextWidget::initStyleOptionForText(QStyleOptionFrame *opt) const {
-    opt->initFrom(this);
-
-    if (frameShape() != QFrame::NoFrame) {
-        opt->lineWidth = style()->pixelMetric(QStyle::PM_DefaultFrameWidth, opt, this);
-        opt->state |= QStyle::State_Sunken;
-    } else {
-        opt->lineWidth = 0;
-        opt->features |= QStyleOptionFrame::Flat;
-    }
-}
-
 SecureBuffer SecureTextWidget::getSecureText() const {
-    if (m_textLen == 0)
+    if (m_textBuffer.size() == 0)
         return SecureBuffer();
 
-    SecureBuffer copy(m_textLen);
-    std::memcpy(copy.data(), m_textBuffer.data(), m_textLen);
+    SecureBuffer copy(m_textBuffer.size());
+    std::memcpy(copy.data(), m_textBuffer.data(), m_textBuffer.size());
     return copy;
 }
 
@@ -129,24 +114,6 @@ void SecureTextWidget::setAlignment(Qt::Alignment align) {
 void SecureTextWidget::setObfuscated(bool obfuscate) {
     m_obfuscated = obfuscate; m_needsRender = true; updateGeometry(); update();
 }
-/*
-QRect SecureTextWidget::textRect() const {
-    QStyleOptionFrame opt;
-    initStyleOptionForText(&opt);
-
-    QRect r;
-    if (frameShape() != QFrame::NoFrame) {
-        r = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
-    } else {
-        r = rect();
-        r = r.marginsRemoved(contentsMargins());
-    }
-
-    r = r.marginsRemoved(m_buttonMargins);
-    r = r.marginsRemoved(m_textMargins);
-
-    return r;
-}*/
 
 QRect SecureTextWidget::textRect() const {
     QRect r = contentsRect();
@@ -159,27 +126,41 @@ QRect SecureTextWidget::textRect() const {
 }
 
 size_t SecureTextWidget::totalChars() const {
+    if (m_textBuffer.empty())
+        return 0;
+
     size_t count = 0;
     const uint8_t* ptr = m_textBuffer.data();
-    const uint8_t* end = ptr + m_textLen;
+    const uint8_t* end = ptr + m_textBuffer.size();
+
     while(ptr < end) {
         nextUtf8Codepoint(ptr, end);
         count++;
     }
+
     return count;
 }
 
 size_t SecureTextWidget::charIndexToByteOffset(int targetIdx) const {
+    if (m_textBuffer.empty())
+        return 0;
+
     int idx = 0;
     const uint8_t* ptr = m_textBuffer.data();
-    const uint8_t* end = ptr + m_textLen;
-    while (ptr < end && idx < targetIdx) { nextUtf8Codepoint(ptr, end); idx++; }
+    const uint8_t* end = ptr + m_textBuffer.size();
+
+
+    while (ptr < end && idx < targetIdx) {
+        nextUtf8Codepoint(ptr, end);
+        idx++;
+    }
+
     return ptr - m_textBuffer.data();
 }
 
 const uint8_t* SecureTextWidget::getRenderData(size_t& outLen) const {
     if (!m_obfuscated) {
-        outLen = m_textLen;
+        outLen = m_textBuffer.size();
         return m_textBuffer.data();
     } else {
         return getStaticDotsData(totalChars(), outLen);
@@ -187,13 +168,16 @@ const uint8_t* SecureTextWidget::getRenderData(size_t& outLen) const {
 }
 
 QSize SecureTextWidget::sizeHint() const { return minimumSizeHint(); }
+
 QSize SecureTextWidget::minimumSizeHint() const {
     if (!m_renderer.isLoaded()) return {0, 0};
 
     float textWidth = 0.0f;
-    if (m_textLen > 0) {
-        size_t renderLen = 0;
-        const uint8_t* renderData = getRenderData(renderLen);
+
+    size_t renderLen = 0;
+    const uint8_t* renderData = getRenderData(renderLen);
+
+    if (renderLen > 0) {
         textWidth = m_renderer.calculateTextWidth(renderData, renderLen);
     } else {
         textWidth = fontMetrics().horizontalAdvance(m_placeholderText);
@@ -217,65 +201,21 @@ QSize SecureTextWidget::minimumSizeHint() const {
                  totalH + cm.top() + cm.bottom());
 }
 
-/*
-QSize SecureTextWidget::minimumSizeHint() const {
-    if (!m_renderer.isLoaded())
-        return {0, 0};
-
-    float textWidth = 0.0f;
-    if (m_textLen > 0) {
-        size_t renderLen = 0;
-        const uint8_t* renderData = getRenderData(renderLen);
-        textWidth = m_renderer.calculateTextWidth(renderData, renderLen);
-    } else if (!m_placeholderText.isEmpty()) {
-        QFont f = font();
-        f.setPixelSize(static_cast<int>(m_fontSize));
-        QFontMetrics fm(f);
-        textWidth = fm.horizontalAdvance(m_placeholderText);
-    }
-
-    auto metrics = m_renderer.getMetrics();
-    int textHeight = std::round(metrics.textHeight);
-
-    int maxButtonHeight = 0;
-    for (auto *btn : std::as_const(m_leadingButtons)) maxButtonHeight = std::max(maxButtonHeight, btn->sizeHint().height());
-    for (auto *btn : std::as_const(m_trailingButtons)) maxButtonHeight = std::max(maxButtonHeight, btn->sizeHint().height());
-
-    int contentHeight = std::max(textHeight, maxButtonHeight);
-
-    int totalWidth = static_cast<int>(textWidth)
-                     + m_textMargins.left() + m_textMargins.right()
-                     + m_buttonMargins.left() + m_buttonMargins.right();
-
-    int totalHeight = contentHeight
-                      + m_textMargins.top() + m_textMargins.bottom();
-
-    QStyleOptionFrame opt;
-    initStyleOptionForText(&opt);
-    opt.rect = QRect(0, 0, 1000, 1000);
-
-    if (frameShape() != QFrame::NoFrame) {
-        QRect cRect = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
-        return {
-            totalWidth + (1000 - cRect.width()) + 2,
-            totalHeight + (1000 - cRect.height())
-        };
-    } else {
-        return {
-            totalWidth + contentsMargins().left() + contentsMargins().right() + 2,
-            totalHeight + contentsMargins().top() + contentsMargins().bottom()
-        };
-    }
-}
-*/
 void SecureTextWidget::paintEvent(QPaintEvent *event) {
     QStyleOptionFrame opt;
-    initStyleOptionForText(&opt);
+    opt.initFrom(this);
+
     QPainter painter(this);
 
     if (frameShape() != QFrame::NoFrame) {
+        opt.lineWidth = style()->pixelMetric(QStyle::PM_DefaultFrameWidth, &opt, this);
+        opt.state |= QStyle::State_Sunken;
+
         style()->drawPrimitive(QStyle::PE_PanelLineEdit, &opt, &painter, this);
     } else {
+        opt.lineWidth = 0;
+        opt.features |= QStyleOptionFrame::Flat;
+
         style()->drawPrimitive(QStyle::PE_Widget, &opt, &painter, this);
     }
 
@@ -285,7 +225,7 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
 
     auto metrics = m_renderer.getMetrics();
 
-    if (m_textLen == 0 && !m_placeholderText.isEmpty()) {
+    if (m_textBuffer.size() == 0 && !m_placeholderText.isEmpty()) {
         painter.setPen(palette().color(QPalette::PlaceholderText));
         QFont f = font();
         f.setPixelSize(static_cast<int>(m_fontSize));
@@ -301,11 +241,6 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
 
 
     if (m_needsRender) {
-        //this->style()->unpolish(this);
-        //this->style()->polish(this);
-
-        qDebug() << "current Role:" << foregroundRole() << "color:" << palette().color(foregroundRole()).name() << "palette Color:" << palette().color(foregroundRole());
-
         m_renderer.renderText(
             renderData, renderLen, cRect, devicePixelRatioF(), m_alignment,
             m_scrollOffset,
@@ -390,36 +325,6 @@ QAction* SecureTextWidget::addAction(const QIcon &icon, QLineEdit::ActionPositio
     updateButtonPositions();
     return action;
 }
-/*
-void SecureTextWidget::updateButtonPositions() {
-    QStyleOptionFrame opt;
-    initStyleOptionForText(&opt);
-    QRect innerRect = style()->subElementRect(QStyle::SE_LineEditContents, &opt, this);
-
-    int left = 0;
-    for (auto *btn : std::as_const(m_leadingButtons)) {
-        QSize sz = btn->sizeHint();
-        btn->resize(sz);
-        int y = innerRect.top() + qRound((innerRect.height() - sz.height()) / 2.0);
-        btn->move(innerRect.left() + left, y);
-        left += sz.width() + m_actionSpacing;
-    }
-
-    int right = 0;
-    for (auto *btn : std::as_const(m_trailingButtons)) {
-        QSize sz = btn->sizeHint();
-        btn->resize(sz);
-        int y = innerRect.top() + qRound((innerRect.height() - sz.height()) / 2.0);
-        btn->move(innerRect.right() - right - sz.width() + 1, y);
-        right += sz.width() + m_actionSpacing;
-    }
-
-    m_buttonMargins = QMargins(left, 0, right, 0);
-
-    m_needsRender = true;
-    update();
-}*/
-
 
 void SecureTextWidget::updateButtonPositions() {
     QRect cr = contentsRect();

@@ -22,6 +22,7 @@ public:
 
     void clear();
     SecureBuffer getSecureText() const;
+    size_t textLen() const { return m_textBuffer.size(); };
 
     int actionSpacing() const { return m_actionSpacing; }
     void setActionSpacing(int spacing);
@@ -47,8 +48,6 @@ public:
     QSize sizeHint() const override;
 
 protected:
-    void initStyleOptionForText(QStyleOptionFrame *opt) const;
-
     void actionEvent(QActionEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -58,10 +57,11 @@ protected:
     size_t totalChars() const;
     size_t charIndexToByteOffset(int targetIdx) const;
 
-    const uint8_t* getRenderData(size_t& outLen) const;
+    virtual const uint8_t* getRenderData(size_t& outLen) const;
+    static const uint8_t* getStaticDotsData(size_t charCount, size_t& outByteLen);
 
     SecureBuffer m_textBuffer;
-    size_t m_textLen = 0;
+    //size_t m_textLen = 0;
 
     QString m_placeholderText;
 
@@ -70,7 +70,7 @@ protected:
 
     float m_scrollOffset = 0.0f;
 
-    Qt::Alignment m_alignment = Qt::AlignLeft | Qt::AlignVCenter;
+    Qt::Alignment m_alignment = Qt::AlignLeft | Qt::AlignVCenter;//Qt::AlignHCenter | Qt::AlignVCenter;
 
     bool m_obfuscated = false;
 
@@ -83,7 +83,6 @@ protected:
     bool m_cursorVisible = false;
 
     SecureFontRenderer m_renderer;
-
 
     int m_actionSpacing = 0;
     QMargins m_textMargins;

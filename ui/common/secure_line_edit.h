@@ -19,6 +19,9 @@ public:
     QSize minimumSizeHint() const override;
     QSize sizeHint() const override;
 
+signals:
+    void textChanged(const SecureBuffer& text);
+
 protected:
     void ensureCursorVisible();
     void resizeEvent(QResizeEvent *event) override;

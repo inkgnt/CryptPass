@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include "utils/secure_buffer.h"
 
 namespace Ui {
 class VaultView;
@@ -22,7 +23,7 @@ public slots:
     void onThemeChanged();
 
 private slots:
-    void onSearchLineTextChanged(const QString &arg1);
+    void onSearchLineTextChanged(const SecureBuffer& filter);
 
     void onAddPasswordButtonClicked();
     void onDeletePasswordButtonClicked();
@@ -36,7 +37,7 @@ private slots:
 private:
     Ui::VaultView *ui;
 
-    void loadDataToList(const QString& filter);
+    void loadDataToList(const SecureBuffer& filter);
 
     void changeIcons();
 };

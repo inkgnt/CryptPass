@@ -21,9 +21,9 @@ VaultView::VaultView(QWidget *parent)
 
     changeIcons();
 
-    loadDataToList("");
+    loadDataToList(SecureBuffer());
 
-    connect(ui->searchLine, &QLineEdit::textChanged, this, &VaultView::onSearchLineTextChanged);
+    connect(ui->searchLine, &SecureLineEdit::textChanged, this, &VaultView::onSearchLineTextChanged);
     connect(ui->addPasswordButton, &QPushButton::clicked, this, &VaultView::onAddPasswordButtonClicked);
     connect(ui->deletePasswordButton, &QPushButton::clicked, this, &VaultView::onDeletePasswordButtonClicked);
     connect(ui->lockButton, &QPushButton::clicked, this, &VaultView::onLockButtonClicked);
@@ -31,7 +31,7 @@ VaultView::VaultView(QWidget *parent)
     connect(ui->exportButton, &QPushButton::clicked, this, &VaultView::onExportButtonClicked);
     connect(ui->settingsButton, &QPushButton::clicked, this, &VaultView::onSettingsButtonClicked);
 
-    ui->frame->setPlaceholderText("Search:");
+    ui->searchLine->setPlaceholderText("Search:");
 }
 
 VaultView::~VaultView()
@@ -40,7 +40,7 @@ VaultView::~VaultView()
     delete ui;
 }
 
-void VaultView::onSearchLineTextChanged(const QString &filter)
+void VaultView::onSearchLineTextChanged(const SecureBuffer& filter)
 {
     loadDataToList(filter);
 }
@@ -51,7 +51,7 @@ void VaultView::onAddPasswordButtonClicked()
     auto d = new Dialog(pw, this);
     d->exec();
 
-    loadDataToList("");
+    loadDataToList(SecureBuffer());
 }
 
 void VaultView::onDeletePasswordButtonClicked()
@@ -67,7 +67,7 @@ void VaultView::onDeletePasswordButtonClicked()
         delete item;
     }
 
-    loadDataToList("");
+    loadDataToList(SecureBuffer());
 }
 
 void VaultView::onLockButtonClicked()
@@ -77,10 +77,10 @@ void VaultView::onLockButtonClicked()
 
 void VaultView::onImportButtonClicked()
 {
-    if (ui->frame->isObfuscated())
-        ui->frame->setObfuscated(false);
+    if (ui->searchLine->isObfuscated())
+        ui->searchLine->setObfuscated(false);
     else
-        ui->frame->setObfuscated(true);
+        ui->searchLine->setObfuscated(true);
 }
 
 void VaultView::onExportButtonClicked()
@@ -93,14 +93,20 @@ void VaultView::onSettingsButtonClicked()
     //
 }
 
-void VaultView::loadDataToList(const QString &filter)
+void VaultView::loadDataToList(const SecureBuffer& filter)
 {
     ui->listWidget->clear();
     QList<DataRecord> records = DatabaseManager::instance().getAllRecords();
 
-    for (DataRecord &record : records)
+    for (DataRecord& record : records)
     {
-        if (!(filter.isEmpty() || record.url.contains(filter, Qt::CaseInsensitive)))
+
+        QByteArray testUrlUtf8(record.url.toUtf8());
+        SecureBuffer test(testUrlUtf8.size());
+        std::memcpy(test.data(), testUrlUtf8.data(), testUrlUtf8.size());
+
+        //TODO
+        if (!(filter.empty() || test.contains(filter, Qt::CaseInsensitive)))
             continue;
 
         auto *widget = new DataEntryWidget(record, this);
@@ -126,10 +132,10 @@ void VaultView::changeIcons()
         delete action;
     }
 
-    const auto actions1 = ui->frame->actions();
+    const auto actions1 = ui->searchLine->actions();
     for (QAction* action : actions1)
     {
-        ui->frame->removeAction(action);
+        ui->searchLine->removeAction(action);
         delete action;
     }
 
@@ -142,8 +148,6 @@ void VaultView::changeIcons()
         ui->exportButton->setIcon(QIcon(":/icons/light/icon_export_light"));
         ui->settingsButton->setIcon(QIcon(":/icons/light/icon_settings_light"));
 
-        ui->frame->addAction(QIcon(":/icons/light/icon_search_light"), QLineEdit::LeadingPosition);
-
     } else {
         ui->searchLine->addAction(QIcon(":/icons/dark/icon_search_dark"), QLineEdit::LeadingPosition);
         ui->addPasswordButton->setIcon(QIcon(":/icons/dark/icon_add_dark"));
@@ -152,8 +156,6 @@ void VaultView::changeIcons()
         ui->importButton->setIcon(QIcon(":/icons/dark/icon_import_dark"));
         ui->exportButton->setIcon(QIcon(":/icons/dark/icon_export_dark"));
         ui->settingsButton->setIcon(QIcon(":/icons/dark/icon_settings_dark"));
-
-        ui->frame->addAction(QIcon(":/icons/dark/icon_search_dark"), QLineEdit::LeadingPosition);
     }
 }
 
@@ -165,5 +167,5 @@ void VaultView::onThemeChanged()
 
 void VaultView::onSyncRequested()
 {
-    loadDataToList("");
+    loadDataToList(SecureBuffer());
 }

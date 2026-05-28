@@ -8,4 +8,5 @@ public:
     ~SecureLabel() override = default;
 
     void setSecureText(const uint8_t* utf8_data, size_t size);
+    const uint8_t* getRenderData(size_t& outLen) const override;
 };

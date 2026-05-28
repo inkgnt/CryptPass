@@ -120,33 +120,6 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLineEdit" name="searchLine">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>225</width>
-       <height>30</height>
-      </size>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-      </font>
-     </property>
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
-     <property name="placeholderText">
-      <string>Search:</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="2">
     <widget class="QPushButton" name="addPasswordButton">
      <property name="sizePolicy">
@@ -228,8 +201,8 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="SecureLineEdit" name="frame">
+   <item row="0" column="1">
+    <widget class="SecureLineEdit" name="searchLine">
      <property name="minimumSize">
       <size>
        <width>225</width>

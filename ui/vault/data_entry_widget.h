@@ -1,7 +1,6 @@
 #pragma once
 
-#include "storage/database_manager.h"
-
+#include "storage/data_record.h"
 #include <QWidget>
 
 namespace Ui {
@@ -33,5 +32,5 @@ private:
 
     DataRecord record;
 
-    bool flag = true;
+    bool isObfuscated = true;
 };

@@ -18,7 +18,7 @@ QSize SecureLineEdit::minimumSizeHint() const {
     QSize baseS = SecureTextWidget::minimumSizeHint();
 
     float textWidth = 0.0f;
-    if (m_textLen > 0) {
+    if (m_textBuffer.size() > 0) {
         size_t len;
         const uint8_t* data = getRenderData(len);
         textWidth = m_renderer.calculateTextWidth(data, len);
@@ -88,16 +88,22 @@ bool SecureLineEdit::deleteSelectedText() {
     size_t offsetEnd = charIndexToByteOffset(maxIdx);
     size_t bytesToDelete = offsetEnd - offsetStart;
 
-    if (m_textLen > offsetEnd) {
-        std::memmove(m_textBuffer.data() + offsetStart, m_textBuffer.data() + offsetEnd, m_textLen - offsetEnd);
+    if (m_textBuffer.size() > offsetEnd) {
+        std::memmove(m_textBuffer.data() + offsetStart, m_textBuffer.data() + offsetEnd, m_textBuffer.size() - offsetEnd);
     }
+
+    m_textBuffer.resize(m_textBuffer.size() - bytesToDelete);
+
+    /*
     if (m_textBuffer.data())
-        sodium_memzero(m_textBuffer.data() + m_textLen - bytesToDelete, bytesToDelete);
+        sodium_memzero(m_textBuffer.data() + m_textBuffer.size() - bytesToDelete, bytesToDelete);
 
     m_textLen -= bytesToDelete;
-
+*/
     m_cursorCharIdx = minIdx;
     m_selectionStartCharIdx = minIdx;
+
+    emit textChanged(getSecureText());
     return true;
 }
 
@@ -107,26 +113,26 @@ void SecureLineEdit::insertText(const uint8_t* ptr, size_t len) {
     deleteSelectedText();
 
     size_t bytesToInsert = len;
-    size_t requiredByteSize = m_textLen + bytesToInsert;
+    const size_t oldSize = m_textBuffer.size();
+    const size_t requiredByteSize = oldSize + bytesToInsert;
+    const size_t currentByteOffset = charIndexToByteOffset(m_cursorCharIdx);
 
-    size_t currentByteOffset = charIndexToByteOffset(m_cursorCharIdx);
-
-    if (requiredByteSize > m_textBuffer.capacity() || m_textBuffer.empty()) {
+    if (requiredByteSize > m_textBuffer.capacity()) {
         size_t newCapacity = std::max(requiredByteSize, m_textBuffer.capacity() * 2);
-        m_textBuffer.resize(newCapacity);
+        m_textBuffer.reserve(newCapacity);
     }
 
-    if (currentByteOffset < m_textLen) {
+    m_textBuffer.resize(requiredByteSize);
+
+    if (currentByteOffset < m_textBuffer.size()) {
         std::memmove(
             m_textBuffer.data() + currentByteOffset + bytesToInsert,
             m_textBuffer.data() + currentByteOffset,
-            m_textLen - currentByteOffset
+            oldSize - currentByteOffset
             );
     }
 
     std::memcpy(m_textBuffer.data() + currentByteOffset, ptr, bytesToInsert);
-
-    m_textLen = requiredByteSize;
 
     int insertedChars = 0;
     const uint8_t* p = ptr;
@@ -139,10 +145,13 @@ void SecureLineEdit::insertText(const uint8_t* ptr, size_t len) {
     m_cursorCharIdx += insertedChars;
     m_selectionStartCharIdx = m_cursorCharIdx;
 
+
     m_needsRender = true;
     ensureCursorVisible();
     updateGeometry();
     update();
+
+    emit textChanged(getSecureText());
 }
 
 void SecureLineEdit::mousePressEvent(QMouseEvent *event) {
