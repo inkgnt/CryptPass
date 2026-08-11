@@ -16,13 +16,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ==========================================================
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-find_package(OpenSSL REQUIRED)
-find_package(unofficial-sodium CONFIG REQUIRED)
+find_package(OpenSSL CONFIG REQUIRED)
+find_package(libsodium CONFIG REQUIRED)
+find_package(sqlcipher CONFIG REQUIRED)
 
 # ==========================================================
 # 3rdparty libraries
 # ==========================================================
-add_subdirectory(3rdparty/sqlcipher)
 add_subdirectory(3rdparty/stb)
 
 # ==========================================================
@@ -62,7 +62,6 @@ add_executable(${PROJECT_NAME}
     ${UI_SOURCES}
 
     resources/resource.qrc
-
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -79,11 +78,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<CONFIG:Release>:QT_NO_DEB
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Widgets
-    unofficial-sodium::sodium
-    OpenSSL::Crypto
-
-    sqlcipher
-    sqlcipher_interface
+    
+    OpenSSL::Crypto    
+    libsodium::libsodium 
+    sqlcipher::sqlcipher
 
     stb_truetype
     stb_truetype_interface

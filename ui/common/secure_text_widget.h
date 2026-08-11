@@ -22,7 +22,7 @@ public:
 
     void clear();
     SecureBuffer getSecureText() const;
-    size_t textLen() const { return m_textBuffer.size(); };
+    std::size_t textLen() const { return m_textBuffer.size(); };
 
     int actionSpacing() const { return m_actionSpacing; }
     void setActionSpacing(int spacing);
@@ -54,14 +54,14 @@ protected:
     void changeEvent(QEvent *event) override;
 
     QRect textRect() const;
-    size_t totalChars() const;
-    size_t charIndexToByteOffset(int targetIdx) const;
+    std::size_t totalChars() const;
+    std::size_t charIndexToByteOffset(int targetIdx) const;
 
-    virtual const uint8_t* getRenderData(size_t& outLen) const;
-    static const uint8_t* getStaticDotsData(size_t charCount, size_t& outByteLen);
+    virtual const std::uint8_t* getRenderData(std::size_t& outLen) const;
+    static const std::uint8_t* getStaticDotsData(std::size_t charCount, std::size_t& outByteLen);
 
     SecureBuffer m_textBuffer;
-    //size_t m_textLen = 0;
+    //std::size_t m_textLen = 0;
 
     QString m_placeholderText;
 

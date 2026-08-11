@@ -11,12 +11,12 @@
 #include <QActionEvent>
 #include <QEvent>
 
-const uint8_t* SecureTextWidget::getStaticDotsData(size_t charCount, size_t& outByteLen) {
-    static const size_t MAX_DOTS = 1024;
-    static const std::vector<uint8_t> dotsBuffer = []() {
-        std::vector<uint8_t> buffer;
+const std::uint8_t* SecureTextWidget::getStaticDotsData(std::size_t charCount, std::size_t& outByteLen) {
+    static const std::size_t MAX_DOTS = 1024;
+    static const std::vector<std::uint8_t> dotsBuffer = []() {
+        std::vector<std::uint8_t> buffer;
         buffer.reserve(MAX_DOTS * 3);
-        for (size_t i = 0; i < MAX_DOTS; ++i) {
+        for (std::size_t i = 0; i < MAX_DOTS; ++i) {
             buffer.push_back(0xE2);
             buffer.push_back(0x80);
             buffer.push_back(0xA2);
@@ -24,7 +24,7 @@ const uint8_t* SecureTextWidget::getStaticDotsData(size_t charCount, size_t& out
         return buffer;
     }();
 
-    size_t count = std::min<size_t>(charCount, MAX_DOTS);
+    std::size_t count = std::min<std::size_t>(charCount, MAX_DOTS);
     outByteLen = count * 3;
     return dotsBuffer.data();
 }
@@ -125,13 +125,13 @@ QRect SecureTextWidget::textRect() const {
     return r;
 }
 
-size_t SecureTextWidget::totalChars() const {
+std::size_t SecureTextWidget::totalChars() const {
     if (m_textBuffer.empty())
         return 0;
 
-    size_t count = 0;
-    const uint8_t* ptr = m_textBuffer.data();
-    const uint8_t* end = ptr + m_textBuffer.size();
+    std::size_t count = 0;
+    const std::uint8_t* ptr = m_textBuffer.data();
+    const std::uint8_t* end = ptr + m_textBuffer.size();
 
     while(ptr < end) {
         nextUtf8Codepoint(ptr, end);
@@ -141,13 +141,13 @@ size_t SecureTextWidget::totalChars() const {
     return count;
 }
 
-size_t SecureTextWidget::charIndexToByteOffset(int targetIdx) const {
+std::size_t SecureTextWidget::charIndexToByteOffset(int targetIdx) const {
     if (m_textBuffer.empty())
         return 0;
 
     int idx = 0;
-    const uint8_t* ptr = m_textBuffer.data();
-    const uint8_t* end = ptr + m_textBuffer.size();
+    const std::uint8_t* ptr = m_textBuffer.data();
+    const std::uint8_t* end = ptr + m_textBuffer.size();
 
 
     while (ptr < end && idx < targetIdx) {
@@ -158,7 +158,7 @@ size_t SecureTextWidget::charIndexToByteOffset(int targetIdx) const {
     return ptr - m_textBuffer.data();
 }
 
-const uint8_t* SecureTextWidget::getRenderData(size_t& outLen) const {
+const std::uint8_t* SecureTextWidget::getRenderData(std::size_t& outLen) const {
     if (!m_obfuscated) {
         outLen = m_textBuffer.size();
         return m_textBuffer.data();
@@ -174,8 +174,8 @@ QSize SecureTextWidget::minimumSizeHint() const {
 
     float textWidth = 0.0f;
 
-    size_t renderLen = 0;
-    const uint8_t* renderData = getRenderData(renderLen);
+    std::size_t renderLen = 0;
+    const std::uint8_t* renderData = getRenderData(renderLen);
 
     if (renderLen > 0) {
         textWidth = m_renderer.calculateTextWidth(renderData, renderLen);
@@ -233,8 +233,8 @@ void SecureTextWidget::paintEvent(QPaintEvent *event) {
         painter.drawText(cRect, m_alignment, m_placeholderText);
     }
 
-    size_t renderLen = 0;
-    const uint8_t* renderData = getRenderData(renderLen);
+    std::size_t renderLen = 0;
+    const std::uint8_t* renderData = getRenderData(renderLen);
 
     int selMin = std::min(m_selectionStartCharIdx, m_cursorCharIdx);
     int selMax = std::max(m_selectionStartCharIdx, m_cursorCharIdx);

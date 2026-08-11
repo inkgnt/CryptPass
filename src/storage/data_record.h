@@ -46,7 +46,7 @@ struct DataRecord { //TODO: migrate to DataRecord_v1
     QByteArray password;
 };
 
-enum class TlvTag : uint8_t {
+enum class TlvTag : std::uint8_t {
     //nonsecure base:
     title = 0x00,
     tags = 0x01,
@@ -86,7 +86,7 @@ enum class TlvTag : uint8_t {
 };
 
 //actual db record
-enum class RecordType : uint8_t {
+enum class RecordType : std::uint8_t {
     Credentials,
     BankCard,
     BillingAddress,
@@ -94,15 +94,15 @@ enum class RecordType : uint8_t {
 };
 
 struct DbRecordNonSecure {
-    uint64_t db_id;
+    std::uint64_t db_id;
     SecureBuffer object_id;
     RecordType type;
 
-    uint64_t created_at;
-    uint64_t updated_at;
-    uint64_t last_access_at;
+    std::uint64_t created_at;
+    std::uint64_t updated_at;
+    std::uint64_t last_access_at;
 
-    std::array<uint8_t, 32>  ns_salt;
+    std::array<std::uint8_t, 32>  ns_salt;
 
     SecureBuffer iv_ncek;
     SecureBuffer encrypted_ncek;
@@ -112,7 +112,7 @@ struct DbRecordNonSecure {
 };
 
 struct DbRecordSecure {
-    uint64_t db_id;
+    std::uint64_t db_id;
 
     SecureBuffer s_salt;
 
@@ -200,13 +200,13 @@ using DataRecordVariant = std::variant<
 
 //interface view
 struct DataRecordView {
-    uint64_t db_id = 0;
+    std::uint64_t db_id = 0;
     SecureBuffer object_id;
     RecordType type = RecordType::Empty;
 
-    uint64_t created_at = 0;
-    uint64_t updated_at = 0;
-    uint64_t last_access_at = 0;
+    std::uint64_t created_at = 0;
+    std::uint64_t updated_at = 0;
+    std::uint64_t last_access_at = 0;
 
     DataRecordVariant data = std::monostate();
 };

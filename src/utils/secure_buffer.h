@@ -20,7 +20,7 @@ public:
 
     SecureBuffer() = default;
 
-    explicit SecureBuffer(size_t size) {
+    explicit SecureBuffer(std::size_t size) {
         if (size > 0) {
             reallocate(size);
             size_ = size;
@@ -58,22 +58,22 @@ public:
         return *this;
     }
 
-    uint8_t* data() noexcept { return data_; };
-    const uint8_t* data() const noexcept { return data_; };
-    size_t size() const noexcept { return size_; };
-    size_t capacity() const noexcept { return capacity_; };
+    std::uint8_t* data() noexcept { return data_; };
+    const std::uint8_t* data() const noexcept { return data_; };
+    std::size_t size() const noexcept { return size_; };
+    std::size_t capacity() const noexcept { return capacity_; };
     bool empty() const noexcept {return !size_;  };
 
-    void reserve(size_t new_capacity) {
+    void reserve(std::size_t new_capacity) {
         if (new_capacity <= capacity_)
             return;
         reallocate(new_capacity);
     }
 
-    void resize(size_t new_size) {
+    void resize(std::size_t new_size) {
 
         if (new_size > capacity_) {
-            size_t new_capacity = std::max(new_size, capacity_ + capacity_ / 2);
+            std::size_t new_capacity = std::max(new_size, capacity_ + capacity_ / 2);
             reserve(new_capacity);
         }
         else if (new_size < size_) {
@@ -88,13 +88,13 @@ public:
 
 
 private:
-    inline static std::atomic<size_t> global_memory_used{0};
-    inline static std::atomic<size_t> global_counter_free{0};
-    inline static std::atomic<size_t> global_counter_malloc{0};
+    inline static std::atomic<std::size_t> global_memory_used{0};
+    inline static std::atomic<std::size_t> global_counter_free{0};
+    inline static std::atomic<std::size_t> global_counter_malloc{0};
 
-    uint8_t* data_ = nullptr;
-    size_t size_ = 0;
-    size_t capacity_ = 0;
+    std::uint8_t* data_ = nullptr;
+    std::size_t size_ = 0;
+    std::size_t capacity_ = 0;
 
     void destroy() {
         if (data_) {
@@ -109,8 +109,8 @@ private:
         capacity_ = 0;
     }
 
-    void reallocate(size_t new_capacity) {
-        uint8_t* new_data = (uint8_t*)sodium_malloc(new_capacity);
+    void reallocate(std::size_t new_capacity) {
+        std::uint8_t* new_data = (std::uint8_t*)sodium_malloc(new_capacity);
         qDebug() << "sodium_malloc" << global_counter_malloc++ << "triggered, size:" << new_capacity;
 
         global_memory_used += new_capacity;
@@ -135,7 +135,7 @@ private:
         }
 
         if (data_) {
-            size_t copy_len = std::min(size_, new_capacity);
+            std::size_t copy_len = std::min(size_, new_capacity);
             if (copy_len > 0) {
                 std::memcpy(new_data, data_, copy_len);
             }
@@ -156,7 +156,7 @@ private:
     //TODO
 
 
-    bool contains(const uint8_t* pData, size_t pSize, Qt::CaseSensitivity cs) const {
+    bool contains(const std::uint8_t* pData, std::size_t pSize, Qt::CaseSensitivity cs) const {
         if (pSize == 0) return true;
         if (pSize > size_) return false;
 
@@ -167,7 +167,7 @@ private:
         }
     }
 
-    static uint32_t toLowerUnicode(uint32_t cp) {
+    static std::uint32_t toLowerUnicode(std::uint32_t cp) {
         if (cp >= 0x0041 && cp <= 0x005A) return cp + 0x20;
 
         if (cp >= 0x0410 && cp <= 0x042F) return cp + 0x20;
@@ -179,29 +179,29 @@ private:
         return cp;
     }
 
-    bool utf8SearchInsensitive(const uint8_t* pData, size_t pSize) const {
-        std::vector<uint32_t> patternCP;
-        const uint8_t* pPtr = pData;
-        const uint8_t* pEnd = pData + pSize;
+    bool utf8SearchInsensitive(const std::uint8_t* pData, std::size_t pSize) const {
+        std::vector<std::uint32_t> patternCP;
+        const std::uint8_t* pPtr = pData;
+        const std::uint8_t* pEnd = pData + pSize;
         while (pPtr < pEnd) {
             patternCP.push_back(toLowerUnicode(nextUtf8Codepoint(pPtr, pEnd)));
         }
 
         if (patternCP.empty()) return true;
 
-        const uint8_t* currentStart = data_;
-        const uint8_t* totalEnd = data_ + size_;
+        const std::uint8_t* currentStart = data_;
+        const std::uint8_t* totalEnd = data_ + size_;
 
         while (currentStart < totalEnd) {
-            const uint8_t* searchPtr = currentStart;
+            const std::uint8_t* searchPtr = currentStart;
             bool match = true;
 
-            for (uint32_t pCP : patternCP) {
+            for (std::uint32_t pCP : patternCP) {
                 if (searchPtr >= totalEnd) {
                     match = false;
                     break;
                 }
-                uint32_t bufferCP = toLowerUnicode(nextUtf8Codepoint(searchPtr, totalEnd));
+                std::uint32_t bufferCP = toLowerUnicode(nextUtf8Codepoint(searchPtr, totalEnd));
                 if (bufferCP != pCP) {
                     match = false;
                     break;
@@ -216,7 +216,7 @@ private:
         return false;
     }
 
-    static inline uint8_t toLowerAscii(uint8_t c) {
+    static inline std::uint8_t toLowerAscii(std::uint8_t c) {
         if (c >= 'A' && c <= 'Z') return c + 32;
         return c;
     }

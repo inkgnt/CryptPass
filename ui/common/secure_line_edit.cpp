@@ -19,8 +19,8 @@ QSize SecureLineEdit::minimumSizeHint() const {
 
     float textWidth = 0.0f;
     if (m_textBuffer.size() > 0) {
-        size_t len;
-        const uint8_t* data = getRenderData(len);
+        std::size_t len;
+        const std::uint8_t* data = getRenderData(len);
         textWidth = m_renderer.calculateTextWidth(data, len);
     } else {
         textWidth = fontMetrics().horizontalAdvance(placeholderText());
@@ -42,8 +42,8 @@ QSize SecureLineEdit::sizeHint() const {
 }
 
 void SecureLineEdit::ensureCursorVisible() {
-    size_t renderLen = 0;
-    const uint8_t* renderData = getRenderData(renderLen);
+    std::size_t renderLen = 0;
+    const std::uint8_t* renderData = getRenderData(renderLen);
     if (renderLen == 0) {
         m_scrollOffset = 0.0f;
         return;
@@ -84,9 +84,9 @@ bool SecureLineEdit::deleteSelectedText() {
     int minIdx = std::min(m_selectionStartCharIdx, m_cursorCharIdx);
     int maxIdx = std::max(m_selectionStartCharIdx, m_cursorCharIdx);
 
-    size_t offsetStart = charIndexToByteOffset(minIdx);
-    size_t offsetEnd = charIndexToByteOffset(maxIdx);
-    size_t bytesToDelete = offsetEnd - offsetStart;
+    std::size_t offsetStart = charIndexToByteOffset(minIdx);
+    std::size_t offsetEnd = charIndexToByteOffset(maxIdx);
+    std::size_t bytesToDelete = offsetEnd - offsetStart;
 
     if (m_textBuffer.size() > offsetEnd) {
         std::memmove(m_textBuffer.data() + offsetStart, m_textBuffer.data() + offsetEnd, m_textBuffer.size() - offsetEnd);
@@ -107,18 +107,18 @@ bool SecureLineEdit::deleteSelectedText() {
     return true;
 }
 
-void SecureLineEdit::insertText(const uint8_t* ptr, size_t len) {
+void SecureLineEdit::insertText(const std::uint8_t* ptr, std::size_t len) {
     if (!ptr) return;
 
     deleteSelectedText();
 
-    size_t bytesToInsert = len;
-    const size_t oldSize = m_textBuffer.size();
-    const size_t requiredByteSize = oldSize + bytesToInsert;
-    const size_t currentByteOffset = charIndexToByteOffset(m_cursorCharIdx);
+    std::size_t bytesToInsert = len;
+    const std::size_t oldSize = m_textBuffer.size();
+    const std::size_t requiredByteSize = oldSize + bytesToInsert;
+    const std::size_t currentByteOffset = charIndexToByteOffset(m_cursorCharIdx);
 
     if (requiredByteSize > m_textBuffer.capacity()) {
-        size_t newCapacity = std::max(requiredByteSize, m_textBuffer.capacity() * 2);
+        std::size_t newCapacity = std::max(requiredByteSize, m_textBuffer.capacity() * 2);
         m_textBuffer.reserve(newCapacity);
     }
 
@@ -135,8 +135,8 @@ void SecureLineEdit::insertText(const uint8_t* ptr, size_t len) {
     std::memcpy(m_textBuffer.data() + currentByteOffset, ptr, bytesToInsert);
 
     int insertedChars = 0;
-    const uint8_t* p = ptr;
-    const uint8_t* e = p + len;
+    const std::uint8_t* p = ptr;
+    const std::uint8_t* e = p + len;
     while (p < e) {
         nextUtf8Codepoint(p, e);
         insertedChars++;
@@ -157,8 +157,8 @@ void SecureLineEdit::insertText(const uint8_t* ptr, size_t len) {
 void SecureLineEdit::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
 
-        size_t renderLen = 0;
-        const uint8_t* renderData = getRenderData(renderLen);
+        std::size_t renderLen = 0;
+        const std::uint8_t* renderData = getRenderData(renderLen);
 
         float localX = event->pos().x() - (textRect().left() + m_textStartX);
         m_cursorCharIdx = m_renderer.offsetToCharIndex(localX, renderData, renderLen);
@@ -208,8 +208,8 @@ void SecureLineEdit::mouseMoveEvent(QMouseEvent *event) {
                 m_autoScrollTimerId = 0;
             }
 
-            size_t renderLen = 0;
-            const uint8_t* renderData = getRenderData(renderLen);
+            std::size_t renderLen = 0;
+            const std::uint8_t* renderData = getRenderData(renderLen);
             float localX = x - (cRect.left() + m_textStartX);
             m_cursorCharIdx = m_renderer.offsetToCharIndex(localX, renderData, renderLen);
 
@@ -278,7 +278,7 @@ void SecureLineEdit::keyPressEvent(QKeyEvent *event) {
         const QString& t = event->text();
         if (t.length() > 0 && t[0].isPrint()) {
             QByteArray tempUtf8 = t.toUtf8();
-            insertText(reinterpret_cast<const uint8_t*>(tempUtf8.data()), tempUtf8.size());
+            insertText(reinterpret_cast<const std::uint8_t*>(tempUtf8.data()), tempUtf8.size());
 
             sodium_memzero(tempUtf8.data(), tempUtf8.size());
         }

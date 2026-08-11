@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QToolButton>
 
 namespace Ui {
 class UnlockView;

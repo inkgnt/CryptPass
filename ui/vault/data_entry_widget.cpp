@@ -40,7 +40,7 @@ DataEntryWidget::DataEntryWidget(DataRecord& record, QWidget *parent)
 
     QByteArray* testUrlUtf8 = new QByteArray(record.url.toUtf8());
 
-    ui->urlLabel->setSecureText(reinterpret_cast<const uint8_t*>(testUrlUtf8->constData()), testUrlUtf8->size());
+    ui->urlLabel->setSecureText(reinterpret_cast<const std::uint8_t*>(testUrlUtf8->constData()), testUrlUtf8->size());
     ui->loginLabel->setObfuscated(true);
     ui->passwordLabel->setObfuscated(true);
 
@@ -64,10 +64,10 @@ void DataEntryWidget::onShowButtonClicked()
 {
     if (isObfuscated)
     {
-        std::vector<uint8_t> ivLogin; ivLogin.assign(record.login.begin(), record.login.begin() + 16);
-        std::vector<uint8_t> ivPass; ivPass.assign(record.password.begin(), record.password.begin() + 16);
-        std::vector<uint8_t> cipherLogin; cipherLogin.assign(record.login.begin() + 16, record.login.end());
-        std::vector<uint8_t> cipherPass; cipherPass.assign(record.password.begin() + 16, record.password.end());
+        std::vector<std::uint8_t> ivLogin; ivLogin.assign(record.login.begin(), record.login.begin() + 16);
+        std::vector<std::uint8_t> ivPass; ivPass.assign(record.password.begin(), record.password.begin() + 16);
+        std::vector<std::uint8_t> cipherLogin; cipherLogin.assign(record.login.begin() + 16, record.login.end());
+        std::vector<std::uint8_t> cipherPass; cipherPass.assign(record.password.begin() + 16, record.password.end());
 
         auto plainLogin = decryptAES256(cipherLogin, KeyManager::instance().getKey(), ivLogin);
         auto plainPass = decryptAES256(cipherPass, KeyManager::instance().getKey(), ivPass);

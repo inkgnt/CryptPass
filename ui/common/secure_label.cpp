@@ -10,7 +10,7 @@ SecureLabel::SecureLabel(QWidget *parent) : SecureTextWidget(parent) {
     setObfuscated(false);
 }
 
-void SecureLabel::setSecureText(const uint8_t* utf8_data, size_t size) {
+void SecureLabel::setSecureText(const std::uint8_t* utf8_data, std::size_t size) {
     clear();
 
     if (utf8_data != nullptr && size > 0) {
@@ -23,7 +23,7 @@ void SecureLabel::setSecureText(const uint8_t* utf8_data, size_t size) {
     update();
 }
 
-const uint8_t* SecureLabel::getRenderData(size_t& outLen) const {
+const std::uint8_t* SecureLabel::getRenderData(std::size_t& outLen) const {
     if (!m_obfuscated) {
         outLen = m_textBuffer.size();
         return m_textBuffer.data();

@@ -75,8 +75,8 @@ void UnlockView::onloginButtonClicked()
         return;
     }
 
-    std::vector<uint8_t> storedSalt;
-    std::vector<uint8_t> storedHash;
+    std::vector<std::uint8_t> storedSalt;
+    std::vector<std::uint8_t> storedHash;
 
     loadHashAndSaltFromFile(storedSalt, storedHash);
 

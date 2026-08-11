@@ -11,6 +11,7 @@
 #include <sys/ptrace.h>
 #include <objc/objc-runtime.h>
 #include <objc/message.h>
+#include <objc/NSObjCRuntime.h>
 #elif defined(__linux__)
 #include <sys/prctl.h>
 #endif

@@ -26,14 +26,14 @@ public:
     };
     FontMetrics getMetrics() const;
 
-    float calculateTextWidth(const uint8_t* textData, size_t textLen) const;
+    float calculateTextWidth(const std::uint8_t* textData, std::size_t textLen) const;
 
-    float charIndexToOffset(int targetIdx, const uint8_t* textData, size_t textLen) const;
+    float charIndexToOffset(int targetIdx, const std::uint8_t* textData, std::size_t textLen) const;
 
-    int offsetToCharIndex(float offsetX, const uint8_t* textData, size_t textLen) const;
+    int offsetToCharIndex(float offsetX, const std::uint8_t* textData, std::size_t textLen) const;
 
     void renderText(
-        const uint8_t* textData, size_t textLen,
+        const std::uint8_t* textData, std::size_t textLen,
         const QRect& cRect, qreal dpr,
         Qt::Alignment alignment,
         float scrollOffset,

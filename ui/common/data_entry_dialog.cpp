@@ -24,8 +24,8 @@ void DataForm::on_pushButton_clicked()
     QByteArray loginQA = ui->usernameLineEdit->text().toUtf8();
     QByteArray passwordQA = ui->lineEdit_3->text().toUtf8();
 
-    std::vector<uint8_t> login(loginQA.begin(), loginQA.end());
-    std::vector<uint8_t> password(passwordQA.begin(), passwordQA.end());
+    std::vector<std::uint8_t> login(loginQA.begin(), loginQA.end());
+    std::vector<std::uint8_t> password(passwordQA.begin(), passwordQA.end());
 
     auto ivLogin = generateIV();
     auto ivPassword = generateIV();

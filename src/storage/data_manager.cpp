@@ -73,7 +73,7 @@ bool DataManager::createRecord(DbRecord& db_record) noexcept
     }
 
     sqlite3_bind_blob(stmt, 1, db_record.object_id.data(), db_record.object_id.size(), SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 2, static_cast<uint8_t>(db_record.type));
+    sqlite3_bind_int(stmt, 2, static_cast<std::uint8_t>(db_record.type));
     sqlite3_bind_blob(stmt, 3,  db_record.ns_salt.data(), db_record.ns_salt.size(), SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 4,  db_record.s_salt.data(), db_record.s_salt.size(), SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 5,  db_record.encrypted_ncek.data(), db_record.encrypted_ncek.size(), SQLITE_STATIC);
@@ -101,7 +101,7 @@ bool DataManager::updateRecord() noexcept
     return true;
 }
 
-bool DataManager::deleteRecord(uint64_t db_id) noexcept
+bool DataManager::deleteRecord(std::uint64_t db_id) noexcept
 {
     const char* sql = "DELETE FROM DataRecords WHERE db_id = ?;";
 
